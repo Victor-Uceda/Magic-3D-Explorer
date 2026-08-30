@@ -3,6 +3,7 @@ import {
   ScryfallList,
   ScryfallAutocomplete,
   ScryfallErrorResponse,
+  ScryfallSet,
 } from './types';
 import {
   ScryfallError,
@@ -120,6 +121,19 @@ export class ScryfallClient {
   }
 
   /**
+   * Fetch next page using Scryfall's next_page URI
+   */
+  public async fetchNextPage(nextPageUrl: string): Promise<ScryfallList<ScryfallCard>> {
+    const url = new URL(nextPageUrl);
+    const endpoint = url.pathname;
+    const params: Record<string, string> = {};
+    url.searchParams.forEach((val, key) => {
+      params[key] = val;
+    });
+    return this.request<ScryfallList<ScryfallCard>>(endpoint, params);
+  }
+
+  /**
    * Fetch a single card by exact or fuzzy name
    */
   public async getCardNamed(name: string, exact = false): Promise<ScryfallCard> {
@@ -153,10 +167,49 @@ export class ScryfallClient {
   }
 
   /**
+   * Fetch all alternative printings/artworks for a card name
+   */
+  public async getCardPrints(name: string): Promise<ScryfallCard[]> {
+    const cleanName = name.split('//')[0].trim();
+    const query = `!"${cleanName.replace(/"/g, '')}" not:digital game:paper unique:prints`;
+    const res = await this.searchCards(query);
+    return res.data || [];
+  }
+
+  /**
    * Get a random card
    */
   public async getRandomCard(): Promise<ScryfallCard> {
     return this.request<ScryfallCard>('/cards/random');
+  }
+
+  /**
+   * Get all available sets, filtered to booster-eligible types
+   */
+  public async getSets(): Promise<ScryfallSet[]> {
+    const BOOSTER_TYPES = new Set([
+      'expansion', 'masters', 'draft_innovation', 'core',
+    ]);
+    const res = await this.request<ScryfallList<ScryfallSet>>('/sets');
+    return (res.data || []).filter(
+      (s) => BOOSTER_TYPES.has(s.set_type) && s.card_count > 0
+    );
+  }
+
+  /**
+   * Get cards from a specific set filtered by rarity
+   */
+  public async getSetCards(
+    setCode: string,
+    rarity: 'common' | 'uncommon' | 'rare' | 'mythic'
+  ): Promise<ScryfallCard[]> {
+    try {
+      const query = `set:${setCode} r:${rarity} not:digital`;
+      const res = await this.searchCards(query);
+      return res.data || [];
+    } catch {
+      return [];
+    }
   }
 }
 

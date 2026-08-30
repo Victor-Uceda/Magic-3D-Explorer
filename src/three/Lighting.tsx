@@ -1,53 +1,25 @@
 import React from 'react';
 
 interface LightingProps {
-  accentColor?: string;
+  manaAuraColor?: string;
 }
 
-export const Lighting: React.FC<LightingProps> = ({ accentColor = '#6366f1' }) => {
+// manaAuraColor retained in props for API compatibility but no longer used for a point light
+export const Lighting: React.FC<LightingProps> = () => {
   return (
     <>
-      {/* Ambient base lighting for soft visibility */}
-      <ambientLight intensity={0.65} />
+      {/* Bright clear ambient lighting */}
+      <ambientLight intensity={1.4} color="#ffffff" />
 
-      {/* Main directional light with soft shadows */}
-      <directionalLight
-        position={[5, 8, 5]}
-        intensity={1.2}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-near={0.5}
-        shadow-camera-far={25}
-        shadow-camera-left={-6}
-        shadow-camera-right={6}
-        shadow-camera-top={6}
-        shadow-camera-bottom={-6}
-        shadow-bias={-0.0005}
-      />
+      {/* Main front key light directly illuminating the card face */}
+      <directionalLight position={[0, 4, 6]} intensity={1.8} color="#ffffff" />
 
-      {/* Rim light from behind to highlight card edges */}
-      <directionalLight
-        position={[-5, 4, -5]}
-        intensity={0.6}
-        color="#06b6d4"
-      />
+      {/* Back key light illuminating the back face when flipped or rotated */}
+      <directionalLight position={[0, 4, -6]} intensity={1.6} color="#ffffff" />
 
-      {/* Subtle bottom fill light */}
-      <pointLight
-        position={[0, -2, 2]}
-        intensity={0.4}
-        color={accentColor}
-        distance={10}
-      />
-
-      {/* Top accent light */}
-      <pointLight
-        position={[0, 4, 0]}
-        intensity={0.5}
-        color="#ffffff"
-        distance={8}
-      />
+      {/* Left and Right soft rim fill lights */}
+      <directionalLight position={[-5, 2, 0]} intensity={0.7} color="#f8fafc" />
+      <directionalLight position={[5, 2, 0]} intensity={0.7} color="#f8fafc" />
     </>
   );
 };

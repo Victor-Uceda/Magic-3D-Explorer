@@ -7,3 +7,6 @@ export { Connection } from './Connection';
 export { CameraController } from './CameraController';
 export { Table } from './Table';
 export { Lighting } from './Lighting';
+export { BoosterScene } from './BoosterScene';
+export { BoosterPack3D } from './BoosterPack3D';
+export { CardReveal3D } from './CardReveal3D';

@@ -12,9 +12,9 @@ interface CameraControllerProps {
 
 export const CameraController: React.FC<CameraControllerProps> = ({
   autoRotate = false,
-  autoRotateSpeed = 0.8,
-  minDistance = 3.5,
-  maxDistance = 12,
+  autoRotateSpeed = 1.8,
+  minDistance = 2.0,
+  maxDistance = 14,
   resetTrigger = 0,
 }) => {
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -29,11 +29,11 @@ export const CameraController: React.FC<CameraControllerProps> = ({
     <DreiOrbitControls
       ref={controlsRef}
       enableDamping={true}
-      dampingFactor={0.05}
+      dampingFactor={0.06}
       minDistance={minDistance}
       maxDistance={maxDistance}
-      maxPolarAngle={Math.PI / 1.8} // Prevent going below table plane
-      minPolarAngle={Math.PI / 6}
+      maxPolarAngle={Math.PI * 0.95} // Full downward viewing angle (almost 180°)
+      minPolarAngle={0.08}           // Full upward top-down viewing angle
       autoRotate={autoRotate}
       autoRotateSpeed={autoRotateSpeed}
       makeDefault

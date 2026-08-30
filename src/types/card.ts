@@ -49,5 +49,15 @@ export interface Card {
   prices: CardPrices;
   legalities: CardLegalities;
   releasedAt?: string;
+  flavorText?: string;
+  edhrecRank?: number;
+  power?: string;
+  toughness?: string;
+  loyalty?: string;
+  scryfallUri?: string;
   isDoubleFaced?: boolean;
+  backImageUri?: string;
+  backName?: string;
+  backTypeLine?: string;
+  backOracleText?: string;
 }

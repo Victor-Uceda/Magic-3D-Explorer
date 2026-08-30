@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 
-export type NodeType = 'PRICE' | 'LEGALITY' | 'PRINTINGS' | 'DETAILS';
+export type NodeType = 'PRECIO' | 'LEGALIDAD' | 'EDICIONES' | 'DETALLES';
 
 export interface InfoNodeProps {
   type: NodeType;
@@ -30,18 +30,16 @@ export const InfoNode: React.FC<InfoNodeProps> = ({
   useFrame((state) => {
     if (!meshRef.current) return;
     const t = state.clock.getElapsedTime();
-    // Offset phase based on position to avoid synchronous bobbing
-    const phase = position[0] * 2 + position[1];
-    meshRef.current.position.y = position[1] + Math.sin(t * 2 + phase) * 0.08;
+    const phase = position[0] * 1.5 + position[1];
+    meshRef.current.position.y = position[1] + Math.sin(t * 1.5 + phase) * 0.05;
 
-    // Pulse scale on select/hover
-    const targetScale = isSelected ? 1.25 : hovered ? 1.15 : 1.0;
-    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+    const targetScale = isSelected ? 1.18 : hovered ? 1.08 : 1.0;
+    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
   });
 
   return (
     <group ref={meshRef} position={position}>
-      {/* Central glowing core orb */}
+      {/* Polished Metallic/Stone Orb */}
       <mesh
         onClick={(e) => {
           e.stopPropagation();
@@ -57,37 +55,28 @@ export const InfoNode: React.FC<InfoNodeProps> = ({
           document.body.style.cursor = 'auto';
         }}
       >
-        <sphereGeometry args={[0.22, 32, 32]} />
+        <sphereGeometry args={[0.18, 24, 24]} />
         <meshStandardMaterial
           color={color}
-          emissive={color}
-          emissiveIntensity={isSelected ? 1.5 : hovered ? 1.0 : 0.6}
-          roughness={0.2}
-          metalness={0.8}
+          roughness={0.35}
+          metalness={0.65}
         />
       </mesh>
 
-      {/* Orbiting wireframe halo */}
+      {/* Outer Fine Ring */}
       <mesh rotation={[Math.PI / 4, 0, 0]}>
-        <ringGeometry args={[0.32, 0.35, 32]} />
+        <ringGeometry args={[0.26, 0.28, 24]} />
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={hovered || isSelected ? 0.9 : 0.4}
+          opacity={isSelected ? 0.85 : hovered ? 0.6 : 0.3}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Point light emitted by the node */}
-      <pointLight
-        color={color}
-        intensity={isSelected ? 2 : hovered ? 1.2 : 0.5}
-        distance={3}
-      />
-
-      {/* 3D Floating HTML Label Tag */}
+      {/* Floating HTML Label Tag (Spanish, Minimalist, Classic MTG Palette) */}
       <Html
-        position={[0, 0.45, 0]}
+        position={[0, 0.4, 0]}
         center
         distanceFactor={8}
         style={{
@@ -101,51 +90,50 @@ export const InfoNode: React.FC<InfoNodeProps> = ({
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
-            background: isSelected
-              ? `linear-gradient(135deg, ${color}cc, rgba(18, 21, 32, 0.95))`
-              : 'rgba(18, 21, 32, 0.85)',
-            backdropFilter: 'blur(8px)',
-            border: `1px solid ${isSelected ? color : hovered ? `${color}88` : 'rgba(255, 255, 255, 0.15)'}`,
+            background: isSelected ? 'rgba(31, 34, 41, 0.95)' : 'rgba(22, 24, 29, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: isSelected
+              ? `1.5px solid ${color}`
+              : hovered
+              ? `1px solid ${color}`
+              : '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: '9999px',
-            padding: '0.35rem 0.85rem',
-            color: '#f8fafc',
+            padding: '0.35rem 0.75rem',
+            color: '#f1f5f9',
             display: 'flex',
             alignItems: 'center',
             gap: '0.45rem',
             boxShadow: isSelected
-              ? `0 0 20px ${color}88`
-              : hovered
-              ? `0 0 12px ${color}66`
-              : '0 4px 12px rgba(0,0,0,0.5)',
-            transform: isSelected ? 'scale(1.08)' : hovered ? 'scale(1.04)' : 'scale(1)',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              ? '0 6px 18px rgba(0, 0, 0, 0.6)'
+              : '0 4px 12px rgba(0, 0, 0, 0.4)',
+            transform: isSelected ? 'scale(1.04)' : hovered ? 'scale(1.02)' : 'scale(1)',
+            transition: 'all 0.15s ease',
             whiteSpace: 'nowrap',
             outline: 'none',
           }}
         >
           <span
             style={{
-              width: '8px',
-              height: '8px',
+              width: '7px',
+              height: '7px',
               borderRadius: '50%',
               backgroundColor: color,
-              boxShadow: `0 0 8px ${color}`,
             }}
           />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
             <span
               style={{
-                fontFamily: 'var(--font-display, sans-serif)',
-                fontSize: '0.75rem',
+                fontSize: '0.72rem',
                 fontWeight: 700,
-                letterSpacing: '0.04em',
+                letterSpacing: '0.03em',
                 lineHeight: 1.1,
+                color: isSelected ? color : '#f1f5f9',
               }}
             >
               {title}
             </span>
             {subtitle && (
-              <span style={{ fontSize: '0.65rem', color: isSelected ? '#ffffff' : '#94a3b8', lineHeight: 1.1 }}>
+              <span style={{ fontSize: '0.62rem', color: '#94a3b8', lineHeight: 1.1 }}>
                 {subtitle}
               </span>
             )}

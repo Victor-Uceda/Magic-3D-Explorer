@@ -1,86 +1,45 @@
 import React, { useRef, useState, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
+
+export type CardFinish = 'normal' | 'foil' | 'etched';
 
 interface Card3DProps {
   frontImageUrl?: string;
+  backImageUrl?: string;
   name?: string;
   isFloating?: boolean;
+  isFlipped?: boolean;
+  finish?: CardFinish;
   onCardClick?: () => void;
-  accentColor?: string;
+  manaAuraColor?: string;
 }
 
 // Global Texture Cache to prevent GC pauses on card searches
 const textureCache = new Map<string, THREE.Texture>();
 
-// Procedural Card Back Texture
+// Official high-res Magic: The Gathering Card Back URL
+const OFFICIAL_MTG_CARD_BACK_URL = 'https://backs.scryfall.io/large/5/9/597b79b3-7d77-4261-871a-60dd17403388.jpg';
+
+// Procedural / Loaded Card Back Texture
 function getCardBackTexture(): THREE.Texture {
-  if (textureCache.has('__mtg_back__')) {
-    return textureCache.get('__mtg_back__')!;
+  if (textureCache.has('__mtg_official_back__')) {
+    return textureCache.get('__mtg_official_back__')!;
   }
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 716;
-  const ctx = canvas.getContext('2d');
+  const loader = new THREE.TextureLoader();
+  loader.crossOrigin = 'anonymous';
+  const texture = loader.load(
+    OFFICIAL_MTG_CARD_BACK_URL,
+    () => {
+      texture.needsUpdate = true;
+    },
+    undefined,
+    () => console.warn('Usando reverso procedural como respaldo')
+  );
 
-  if (ctx) {
-    // Dark border
-    ctx.fillStyle = '#18100a';
-    ctx.fillRect(0, 0, 512, 716);
-
-    // Inner frame
-    ctx.fillStyle = '#382214';
-    ctx.fillRect(18, 18, 476, 680);
-
-    // Background gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, 512, 716);
-    bgGrad.addColorStop(0, '#2a180d');
-    bgGrad.addColorStop(0.5, '#442b1a');
-    bgGrad.addColorStop(1, '#1b0e06');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(32, 32, 448, 652);
-
-    // Center oval
-    ctx.strokeStyle = '#c49a3c';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.ellipse(256, 358, 160, 230, 0, 0, 2 * Math.PI);
-    ctx.stroke();
-
-    // Inner oval fill
-    const ovalGrad = ctx.createRadialGradient(256, 358, 20, 256, 358, 190);
-    ovalGrad.addColorStop(0, '#162e44');
-    ovalGrad.addColorStop(1, '#09131d');
-    ctx.fillStyle = ovalGrad;
-    ctx.fill();
-
-    // Mana orbs
-    const manaColors = ['#f8e7b9', '#0e68ab', '#150b00', '#d3202a', '#00733e'];
-    manaColors.forEach((color, i) => {
-      const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-      const x = 256 + Math.cos(angle) * 65;
-      const y = 358 + Math.sin(angle) * 65;
-      ctx.beginPath();
-      ctx.arc(x, y, 13, 0, 2 * Math.PI);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    });
-
-    ctx.fillStyle = '#e2c56a';
-    ctx.font = 'bold 26px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('MAGIC 3D', 256, 230);
-    ctx.font = 'italic 16px serif';
-    ctx.fillText('THE GATHERING', 256, 490);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  textureCache.set('__mtg_back__', texture);
+  textureCache.set('__mtg_official_back__', texture);
   return texture;
 }
 
@@ -97,45 +56,45 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    ctx.fillStyle = '#08090c';
+    ctx.fillStyle = '#0f1013';
     ctx.fillRect(0, 0, 512, 716);
 
     const frameGrad = ctx.createLinearGradient(0, 0, 512, 716);
-    frameGrad.addColorStop(0, '#1e293b');
-    frameGrad.addColorStop(1, '#0f172a');
+    frameGrad.addColorStop(0, '#262a33');
+    frameGrad.addColorStop(1, '#16181d');
     ctx.fillStyle = frameGrad;
     ctx.fillRect(20, 20, 472, 676);
 
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#16181d';
     ctx.fillRect(32, 32, 448, 44);
-    ctx.strokeStyle = '#06b6d4';
+    ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(32, 32, 448, 44);
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#f1f5f9';
     ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(name, 44, 62);
 
     const artGrad = ctx.createRadialGradient(256, 220, 20, 256, 220, 160);
-    artGrad.addColorStop(0, '#312e81');
-    artGrad.addColorStop(1, '#020617');
+    artGrad.addColorStop(0, '#334155');
+    artGrad.addColorStop(1, '#0f172a');
     ctx.fillStyle = artGrad;
     ctx.fillRect(32, 84, 448, 250);
 
-    ctx.fillStyle = '#38bdf8';
+    ctx.fillStyle = '#d4af37';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('✨ MAGIC 3D EXPLORER ✨', 256, 225);
 
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = '#1f2229';
     ctx.fillRect(32, 342, 448, 34);
     ctx.fillStyle = '#94a3b8';
     ctx.font = 'bold 15px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Artifact • Rare', 44, 365);
+    ctx.fillText('Colección Clásica', 44, 365);
 
-    ctx.fillStyle = '#020617';
+    ctx.fillStyle = '#0f1013';
     ctx.fillRect(32, 384, 448, 240);
 
     ctx.fillStyle = '#cbd5e1';
@@ -149,20 +108,64 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
   return texture;
 }
 
+// Creates authentic MTG card shape with smooth rounded corners
+function createRoundedCardShape(w: number, h: number, r: number): THREE.Shape {
+  const shape = new THREE.Shape();
+  const x = -w / 2;
+  const y = -h / 2;
+
+  shape.moveTo(x + r, y);
+  shape.lineTo(x + w - r, y);
+  shape.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
+  shape.lineTo(x + w, y + h - r);
+  shape.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2, false);
+  shape.lineTo(x + r, y + h);
+  shape.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false);
+  shape.lineTo(x, y + r);
+  shape.absarc(x + r, y + r, r, Math.PI, (3 * Math.PI) / 2, false);
+
+  return shape;
+}
+
+// Generates UV coordinates for front or back rounded face
+function createCardFaceGeometry(w: number, h: number, r: number): THREE.BufferGeometry {
+  const shape = createRoundedCardShape(w, h, r);
+  const geom = new THREE.ShapeGeometry(shape, 32);
+
+  const pos = geom.attributes.position;
+  const uvs = new Float32Array(pos.count * 2);
+
+  for (let i = 0; i < pos.count; i++) {
+    const px = pos.getX(i);
+    const py = pos.getY(i);
+    // Left-to-right UV mapping (Mesh Y-rotation handles back positioning without mirroring text)
+    const u = (px + w / 2) / w;
+    const v = (py + h / 2) / h;
+    uvs[i * 2] = u;
+    uvs[i * 2 + 1] = v;
+  }
+
+  geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 export const Card3D: React.FC<Card3DProps> = ({
   frontImageUrl,
-  name = 'Black Lotus',
+  backImageUrl,
+  name = 'Sol Ring',
   isFloating = true,
+  isFlipped = false,
+  finish = 'normal',
   onCardClick,
-  accentColor = '#06b6d4',
 }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
-  const cardBackTexture = useMemo(() => getCardBackTexture(), []);
+  const defaultBackTexture = useMemo(() => getCardBackTexture(), []);
   const fallbackFrontTexture = useMemo(() => getFallbackFrontTexture(name), [name]);
 
-  // Load external image with texture caching
+  // Load front image with texture caching
   const frontTexture = useMemo(() => {
     if (!frontImageUrl) return fallbackFrontTexture;
 
@@ -178,83 +181,174 @@ export const Card3D: React.FC<Card3DProps> = ({
         tex.needsUpdate = true;
       },
       undefined,
-      () => console.warn('Could not load card texture, using fallback')
+      () => console.warn('No se pudo cargar la textura frontal')
     );
     tex.colorSpace = THREE.SRGBColorSpace;
     textureCache.set(frontImageUrl, tex);
     return tex;
   }, [frontImageUrl, fallbackFrontTexture]);
 
-  // Reusable materials
-  const materials = useMemo(() => {
-    const edgeMaterial = new THREE.MeshStandardMaterial({
-      color: '#0a0d14',
-      roughness: 0.9,
-      metalness: 0.1,
+  // Load back image (DFC second face or default card back)
+  const backTexture = useMemo(() => {
+    if (!backImageUrl) return defaultBackTexture;
+
+    if (textureCache.has(backImageUrl)) {
+      return textureCache.get(backImageUrl)!;
+    }
+
+    const loader = new THREE.TextureLoader();
+    loader.crossOrigin = 'anonymous';
+    const tex = loader.load(
+      backImageUrl,
+      () => {
+        tex.needsUpdate = true;
+      },
+      undefined,
+      () => console.warn('No se pudo cargar la textura trasera')
+    );
+    tex.colorSpace = THREE.SRGBColorSpace;
+    textureCache.set(backImageUrl, tex);
+    return tex;
+  }, [backImageUrl, defaultBackTexture]);
+
+  // Rounded MTG Card Geometries (Width: 2.5, Height: 3.5, Radius: 0.12)
+  const { frontGeom, backGeom, edgeGeom } = useMemo(() => {
+    const w = 2.5;
+    const h = 3.5;
+    const r = 0.12; // Authentic MTG rounded corner radius
+    const shape = createRoundedCardShape(w, h, r);
+    const extrude = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.016,
+      bevelEnabled: false,
     });
+    extrude.center();
 
-    const frontMaterial = new THREE.MeshStandardMaterial({
-      map: frontTexture,
-      roughness: 0.35,
-      metalness: 0.1,
-    });
+    return {
+      frontGeom: createCardFaceGeometry(w, h, r),
+      backGeom: createCardFaceGeometry(w, h, r),
+      edgeGeom: extrude,
+    };
+  }, []);
 
-    const backMaterial = new THREE.MeshStandardMaterial({
-      map: cardBackTexture,
-      roughness: 0.45,
-      metalness: 0.1,
-    });
-
-    return [edgeMaterial, edgeMaterial, edgeMaterial, edgeMaterial, frontMaterial, backMaterial];
-  }, [frontTexture, cardBackTexture]);
-
-  // Floating animation with reduced math complexity
+  // Floating & 3D Flip animation
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (!groupRef.current) return;
     const t = state.clock.getElapsedTime();
 
     if (isFloating) {
-      meshRef.current.position.y = Math.sin(t * 1.5) * 0.08 + 0.15;
-      meshRef.current.rotation.y = THREE.MathUtils.lerp(
-        meshRef.current.rotation.y,
-        Math.sin(t * 0.7) * 0.12 + (hovered ? 0.25 : 0),
-        0.06
-      );
-      meshRef.current.rotation.z = Math.cos(t * 1.1) * 0.02;
+      groupRef.current.position.y = Math.sin(t * 1.5) * 0.08 + 0.15;
+      
+      const baseFlipRotation = isFlipped ? Math.PI : 0;
+      const wobble = Math.sin(t * 0.7) * 0.08 + (hovered ? 0.18 : 0);
+      const targetRotY = baseFlipRotation + (isFlipped ? -wobble : wobble);
+
+      // Snappy and smooth 3D flip animation
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotY, 0.22);
+      groupRef.current.rotation.z = Math.cos(t * 1.1) * 0.02;
     }
 
     const targetScale = hovered ? 1.05 : 1.0;
-    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
+    groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
   });
+
+  const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+    pointerDownPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    };
+  };
+
+  const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+    if (!pointerDownPos.current) return;
+    const dx = e.clientX - pointerDownPos.current.x;
+    const dy = e.clientY - pointerDownPos.current.y;
+    const dist = Math.hypot(dx, dy);
+    const elapsed = Date.now() - pointerDownPos.current.time;
+    pointerDownPos.current = null;
+
+    // Only toggle flip if it was a quick stationary click, NOT an orbit drag
+    if (dist < 6 && elapsed < 280) {
+      e.stopPropagation();
+      onCardClick?.();
+    }
+  };
 
   return (
     <group position={[0, 0, 0]}>
-      <mesh
-        ref={meshRef}
-        material={materials}
-        onClick={(e) => {
-          e.stopPropagation();
-          onCardClick?.();
-        }}
+      {/* Main 3D Rounded Card */}
+      <group
+        ref={groupRef}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);
-          document.body.style.cursor = 'pointer';
+          document.body.style.cursor = 'grab';
         }}
         onPointerOut={() => {
           setHovered(false);
           document.body.style.cursor = 'auto';
         }}
       >
-        <boxGeometry args={[2.5, 3.5, 0.022]} />
-      </mesh>
+        {/* Front Face with Rounded Corners - Dynamic Finish */}
+        <mesh geometry={frontGeom} position={[0, 0, 0.009]}>
+          {finish === 'foil' ? (
+            <meshPhysicalMaterial
+              map={frontTexture}
+              roughness={0.12}
+              metalness={0.3}
+              clearcoat={0.9}
+              clearcoatRoughness={0.06}
+              iridescence={1.0}
+              iridescenceIOR={1.45}
+              iridescenceThicknessRange={[140, 500]}
+              reflectivity={0.95}
+              side={THREE.FrontSide}
+            />
+          ) : finish === 'etched' ? (
+            <meshPhysicalMaterial
+              map={frontTexture}
+              roughness={0.38}
+              metalness={0.7}
+              clearcoat={0.35}
+              clearcoatRoughness={0.2}
+              iridescence={0.4}
+              iridescenceIOR={1.2}
+              reflectivity={0.65}
+              side={THREE.FrontSide}
+            />
+          ) : (
+            <meshStandardMaterial
+              map={frontTexture}
+              roughness={0.26}
+              metalness={0.0}
+              side={THREE.FrontSide}
+            />
+          )}
+        </mesh>
 
-      <pointLight
-        position={[0, 0, -0.15]}
-        intensity={hovered ? 1.2 : 0.6}
-        color={accentColor}
-        distance={3.5}
-      />
+        {/* Back Face with Rounded Corners (180 deg) */}
+        <mesh geometry={backGeom} position={[0, 0, -0.009]} rotation={[0, Math.PI, 0]}>
+          <meshStandardMaterial
+            map={backTexture}
+            roughness={0.26}
+            metalness={0.0}
+            side={THREE.FrontSide}
+          />
+        </mesh>
+
+        {/* Dark Card Edge Core */}
+        <mesh geometry={edgeGeom} position={[0, 0, 0]}>
+          <meshStandardMaterial
+            color="#111317"
+            roughness={0.7}
+            metalness={0.1}
+          />
+        </mesh>
+      </group>
     </group>
   );
 };

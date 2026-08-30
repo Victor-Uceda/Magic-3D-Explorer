@@ -49,6 +49,19 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     });
   }
 
+  let backImageUri: string | undefined = undefined;
+  let backName: string | undefined = undefined;
+  let backTypeLine: string | undefined = undefined;
+  let backOracleText: string | undefined = undefined;
+
+  if (isDoubleFaced && scryfallCard.card_faces && scryfallCard.card_faces.length > 1) {
+    const face1 = scryfallCard.card_faces[1];
+    backImageUri = face1.image_uris?.normal || face1.image_uris?.large || face1.image_uris?.png;
+    backName = face1.name;
+    backTypeLine = face1.type_line;
+    backOracleText = face1.oracle_text;
+  }
+
   return {
     id: scryfallCard.id,
     name: scryfallCard.name,
@@ -81,6 +94,16 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
       ...legalities,
     },
     releasedAt: scryfallCard.released_at,
+    flavorText: scryfallCard.flavor_text || undefined,
+    edhrecRank: scryfallCard.edhrec_rank || undefined,
+    power: scryfallCard.power || undefined,
+    toughness: scryfallCard.toughness || undefined,
+    loyalty: scryfallCard.loyalty || undefined,
+    scryfallUri: scryfallCard.scryfall_uri || undefined,
     isDoubleFaced,
+    backImageUri,
+    backName,
+    backTypeLine,
+    backOracleText,
   };
 }

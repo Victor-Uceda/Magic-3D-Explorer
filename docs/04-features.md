@@ -2,85 +2,134 @@
 
 ## 1. Card Search
 
-El usuario debe poder buscar una carta por nombre.
+El usuario debe poder buscar una carta por nombre desde el navbar.
 
-Ejemplo:
-
-```text
-Black Lotus
-```
-
-El frontend enviará la solicitud al backend.
-
-Estados:
+**Estados:**
 
 ```text
 IDLE
 LOADING
-SUCCESS
+SUCCESS (resultados en catálogo)
 EMPTY
 ERROR
 ```
 
----
-
-## 2. Card Data
-
-Mostrar como mínimo:
-
-* nombre;
-* mana cost;
-* type line;
-* oracle text;
-* rarity;
-* set;
-* set name;
-* artist;
-* image;
-* prices;
-* legalities.
+**Comportamiento:**
+* Enter → abrir resultados en catálogo
+* Click → Abrir experiencia 3D de la carta
+* Debounce en el input de búsqueda
+* Resultados rápidos con imagen, nombre, set, rareza y precio en Soles (PEN)
 
 ---
 
-## 3. 3D Card
+## 2. Catálogo de Cartas
 
-La carta debe aparecer en una escena 3D.
+Punto de entrada del usuario. Debe ser una experiencia de discovery visual directa.
 
-Debe permitir:
+**Estructura:**
+```
+HEADER:
+  MAGIC 3D | Buscar... | Catálogo | Mazos | Colección
 
-* rotación;
-* zoom;
-* movimiento de cámara;
-* selección.
+CONTENIDO:
+  CARTAS [cantidad encontrada]
 
-Utilizar una geometría reutilizable.
+FILTROS (progresivos):
+  - color (W, U, B, R, G, C)
+  - tipo (creature, instant, sorcery, artifact, land, planeswalker, enchantment)
+  - rareza (common, uncommon, rare, mythic)
+  - formato (commander, modern, standard, pioneer, pauper, legacy)
 
-La imagen de Scryfall debe utilizarse como textura (en cartas DFC o de doble cara, utilizar la textura de la cara frontal para el MVP).
+PRECIOS:
+  - Siempre en Soles peruanos (S/.) calculados desde Scryfall
+
+GRID:
+  - Cartas como elemento principal
+  - Responsivo: desktop 4 columnas, tablet 2, mobile 2
+  - Infinite scroll (cursor pagination, lotes automáticos por Scryfall next_page)
+  - Skeleton loading con efecto shimmer entre lotes
+  - Clic en cualquier carta abre directamente su visor 3D interactivo
+```
+
+**Comportamiento:**
+* Usuario entra → ve catálogo (punto de entrada)
+* Desplaza → carga lote siguiente detectando proximidad
+* Aplica filtros → filtra resultados en tiempo real
+* Selecciona carta → Quick View o Card Detail
 
 ---
 
-## 4. Information Nodes
+## 3. Card Detail & 3D Experience
 
-Crear cuatro nodos principales:
+Toda interacción de detalle se realiza directamente en el entorno 3D interactivo.
+
+**Debe incluir:**
+* Modelo 3D interactivo de la carta con acabados Normal, Foil y Etched
+* Nombre, tipo, coste de maná
+* Oracle text (con parsing de símbolos de maná SVG)
+* Rareza, set, artista
+* Precios de mercado en Soles (S/.)
+* Drawer lateral de cartas relacionadas / resultados de búsqueda
+* Panel técnico de especificaciones (P/T, Lealtad, Ranking EDHREC, Sinergias)
+* Acciones de mazo y favoritos persistentes
+
+* Impresiones (variant cards)
+
+**Acciones principales (peso visual diferenciado):**
+* [Ver en 3D] - **PRIMARIA** (highlighted)
+* [Agregar al mazo] - secundaria
+* [Favorito] - tertiary
+
+**No poner todas las acciones con el mismo peso visual.** Debe existir una acción primaria clara.
+
+**El usuario puede pasar de aquí a Quick View o volver al catálogo.**
+
+---
+
+## 5. Information Nodes
+
+Crear cuatro nodos principales para la experiencia 3D:
 
 ```text
 PRICE
 LEGALITY
-PRINTINGS
+EDITIONS
 DETAILS
 ```
 
-Los nodos deben estar conectados visualmente con la carta.
+**Los nodos deben parecer herramientas de análisis, no esferas brillantes.**
+
+**Ejemplo visual en Card 3D:**
+```
+                       PRICE
+                         |
+                         |
+                    [ CARD 3D ]
+                    /         \
+                   /           \
+             EDITIONS        LEGALITY
+                   \
+                    DETAILS
+```
+
+**Cada nodo puede utilizar:**
+* Icono funcional (sin hologramas, sin neón);
+* Etiqueta de texto;
+* Pequeña cantidad de información;
+* Conexión visual fina y discreta;
+
+**Los conectores deben ser finos y discretos.**
+
+**Estética:** "premium analytical visualization" NO: "AI generated futuristic dashboard".
 
 ---
 
-## 5. Price Node
+## 6. Price Node
 
 Mostrar información disponible de precios.
 
-Ejemplo:
-
-```text
+**Ejemplo:**
+```
 USD
 $3.21
 
@@ -92,42 +141,40 @@ No inventar datos que Scryfall no proporcione.
 
 ---
 
-## 6. Legality Node
+## 7. Legality Node
 
 Mostrar legalidad por formato.
 
-Ejemplo:
-
-```text
-Standard
-Modern
-Legacy
-Vintage
-Commander
-Pioneer
-Pauper
+**Ejemplo:**
+```
+Standard  → legal
+Modern  → legal
+Legacy  → banned
+Vintage → restricted
+Commander → legal
+Pioneer → legal
+Pauper  → not_legal
 ```
 
 Utilizar los formatos realmente proporcionados por Scryfall.
 
 ---
 
-## 7. Printings Node
+## 8. Printings Node
 
 Mostrar las diferentes impresiones de la carta.
 
-Cuando sea posible:
-
+**Cuando sea posible:**
 * set;
 * set name;
 * release date;
-* imagen.
+* imagen (miniatura).
 
 No cargar información innecesaria antes de solicitarla.
 
 ---
 
-## 8. Details Node
+## 9. Details Node
 
 Mostrar:
 
@@ -135,24 +182,39 @@ Mostrar:
 * tipo;
 * rareza;
 * artista;
-* texto;
+* texto (Oracle text con símbolos de maná);
 * mana cost.
 
 ---
 
-## 9. Authentication
+## 10. Authentication
 
 Utilizar Firebase Authentication.
 
-Debe permitir autenticación mediante un método sencillo apropiado para el MVP.
+**Pero NO bloquear la exploración.**
 
-El usuario no autenticado puede explorar cartas.
+**Flujo:**
+```
+Usuario entra
+   ↓
+explora cartas (SIN login requerido)
+   ↓
+ve una carta
+   ↓
+agrega favorito → solicita login
+   ↓
+login → guarda favorito
 
-El usuario autenticado puede guardar favoritos.
+O:
+
+Usuario crea mazo → quiere guardar → login
+```
+
+El usuario anónimo puede explorar cartas, filtrar, buscar, ver Quick View.
 
 ---
 
-## 10. Favorites
+## 11. Favorites
 
 Usuario autenticado:
 
@@ -166,39 +228,32 @@ Los favoritos deben pertenecer exclusivamente al usuario correspondiente.
 
 ---
 
-## 11. Firestore
+## 12. Firestore
 
 Estructura conceptual:
 
 ```text
 users/
     {userId}/
-
 favorites/
     {favoriteId}
+    cardId: string
+    cardName: string
+    imageUrl: string
+    setName: string
+    createdAt: number
+
+decks/
+    {deckId}
+    name: string
+    format: string
+    description: string
+    cards: [{cardId, quantity}]
+    createdAt: number
+    userId: string
+
+no almacenar información duplicada innecesariamente.
 ```
-
-No almacenar información duplicada innecesariamente.
-
----
-
-## 12. Cache
-
-Antes de consultar Scryfall:
-
-```text
-Request
- ↓
-Cache
- ↓
-¿Válido?
- ├── YES → Return
- └── NO → Scryfall
-```
-
-Definir un TTL razonable.
-
-Documentar la estrategia.
 
 ---
 
@@ -206,9 +261,8 @@ Documentar la estrategia.
 
 Mostrar estados amigables.
 
-Ejemplo:
-
-```text
+**Ejemplo:**
+```
 Card not found
 
 Unable to connect to Scryfall
@@ -216,7 +270,7 @@ Unable to connect to Scryfall
 Something went wrong. Please try again.
 ```
 
-No mostrar errores internos.
+No mostrar errores internos al usuario.
 
 ---
 
@@ -228,7 +282,13 @@ La aplicación debe funcionar en:
 * tablet;
 * móvil.
 
-La experiencia 3D puede simplificarse en pantallas pequeñas.
+**La experiencia 3D puede simplificarse en pantallas pequeñas.**
+
+* Desktop: navbar completo, grid amplio, 3D completo
+* Tablet: grid reducido, filtros adaptados
+* Mobile: navegación simplificada, filtros en drawer, cartas en 2 columnas, experiencia 3D simplificada o oculta
+
+No simplemente reducir tamaños. Adaptar la experiencia.
 
 ---
 
@@ -237,10 +297,13 @@ La experiencia 3D puede simplificarse en pantallas pequeñas.
 Implementar:
 
 * debounce de búsqueda;
-* cache;
-* carga progresiva;
-* lazy loading cuando corresponda;
-* reutilización de recursos 3D.
+* cache (texturas 3D, datos de cartas);
+* lazy loading (componentes, imágenes);
+* infinite scroll (cursor pagination, lotes controlados);
+* reutilización de geometrías y materiales (ya existe en Card3D);
+* pagination en requests a Scryfall;
+
+No cargar miles de cartas de una sola vez. No descargar recursos innecesarios.
 
 ---
 
@@ -249,12 +312,12 @@ Implementar:
 Cuando corresponda:
 
 * botones accesibles;
-* labels;
-* navegación por teclado;
+* labels apropiados;
+* navegación por teclado (/, espacio, f, e, n, r, flechas, esc);
 * contraste adecuado;
-* textos alternativos.
+* textos alternativos en imágenes;
 
-La interfaz 3D no debe ser la única forma de acceder a información importante.
+La interfaz 3D no debe ser la única forma de acceder a información importante. Toda la información relevante debe estar disponible también en UI 2D (Quick View, Card Detail).
 
 ---
 
@@ -262,19 +325,56 @@ La interfaz 3D no debe ser la única forma de acceder a información importante.
 
 El MVP está terminado cuando:
 
-1. el usuario abre la aplicación;
+1. el usuario entra y ve el catálogo (punto de entrada);
 2. busca una carta;
-3. backend consulta Scryfall;
-4. se recibe información válida;
-5. la carta aparece en 3D;
-6. puede rotarse;
-7. puede hacer zoom;
-8. puede seleccionar PRICE;
-9. puede seleccionar LEGALITY;
-10. puede seleccionar PRINTINGS;
-11. puede seleccionar DETAILS;
-12. puede iniciar sesión;
-13. puede guardar favoritos;
-14. puede consultar favoritos;
-15. existen tests;
-16. el proyecto puede desplegarse.
+3. filtro y sorting funcionan;
+4. abre una carta en Quick View;
+5. entiende su información;
+6. ve la carta en 3D (opcional, cuando lo decide);
+7. la agrega a un mazo;
+8. crea un mazo;
+9. ve el mazo en 3D (Deck 3D);
+10. simula una mano;
+11. puede favoritar una carta (login opcional);
+12. el proyecto puede desplegarse.
+
+---
+
+## 18. Lo que NO quiero
+
+NO diseñar:
+
+* dashboard genérico;
+* interfaz de videojuego;
+* cyberpunk;
+* neon;
+* hologramas;
+* glassmorphism exagerado;
+* gradientes excesivos;
+* círculos flotantes sin función;
+* partículas permanentes;
+* glow excesivo;
+* "AI aesthetic";
+* exceso de tarjetas;
+* exceso de botones;
+* exceso de iconos;
+
+No hacer que parezca una plantilla generada por IA.
+
+Debe parecer un producto diseñado por un equipo de producto profesional.
+
+---
+
+## 19. Prioridad del trabajo (por feature)
+
+1. Catálogo con infinite scroll y filtros;
+2. Quick View (modular, sin 3D obligatoria);
+3. Card Detail;
+4. 3D Visual Language (quita partículas/neón, mejora iluminación);
+5. Authentication;
+6. Deck Builder;
+7. Deck 3D;
+8. Deck Simulator;
+9. Colección + Favoritos;
+10. Responsive;
+11. Testing + QA.

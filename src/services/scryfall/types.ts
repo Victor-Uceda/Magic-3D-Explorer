@@ -73,6 +73,12 @@ export interface ScryfallCard {
   card_faces?: ScryfallCardFace[];
   prices: ScryfallPrices;
   legalities: ScryfallLegalities;
+  flavor_text?: string;
+  edhrec_rank?: number;
+  power?: string;
+  toughness?: string;
+  loyalty?: string;
+  scryfall_uri?: string;
   released_at?: string;
   layout?: string;
 }
@@ -97,4 +103,16 @@ export interface ScryfallErrorResponse {
   status: number;
   details: string;
   type?: string;
+}
+
+export interface ScryfallSet {
+  object: 'set';
+  id: string;
+  code: string;
+  name: string;
+  set_type: string;
+  released_at?: string;
+  card_count: number;
+  icon_svg_uri: string;
+  scryfall_uri?: string;
 }
