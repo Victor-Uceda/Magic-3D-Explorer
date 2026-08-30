@@ -10,170 +10,142 @@ interface Card3DProps {
   accentColor?: string;
 }
 
-// Procedural Card Back Canvas (Classic MTG style aesthetic)
-function createCardBackTexture(): THREE.CanvasTexture {
+// Global Texture Cache to prevent GC pauses on card searches
+const textureCache = new Map<string, THREE.Texture>();
+
+// Procedural Card Back Texture
+function getCardBackTexture(): THREE.Texture {
+  if (textureCache.has('__mtg_back__')) {
+    return textureCache.get('__mtg_back__')!;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 716;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // Rich dark brown border
-    ctx.fillStyle = '#1c110a';
+    // Dark border
+    ctx.fillStyle = '#18100a';
     ctx.fillRect(0, 0, 512, 716);
 
-    // Inner dark wood frame
-    ctx.fillStyle = '#3a2618';
-    ctx.fillRect(20, 20, 472, 676);
+    // Inner frame
+    ctx.fillStyle = '#382214';
+    ctx.fillRect(18, 18, 476, 680);
 
-    // Subtle gradient background
+    // Background gradient
     const bgGrad = ctx.createLinearGradient(0, 0, 512, 716);
-    bgGrad.addColorStop(0, '#2e1c10');
-    bgGrad.addColorStop(0.5, '#4a3020');
-    bgGrad.addColorStop(1, '#1e120b');
+    bgGrad.addColorStop(0, '#2a180d');
+    bgGrad.addColorStop(0.5, '#442b1a');
+    bgGrad.addColorStop(1, '#1b0e06');
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(35, 35, 442, 646);
+    ctx.fillRect(32, 32, 448, 652);
 
     // Center oval
-    ctx.strokeStyle = '#c29b38';
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#c49a3c';
+    ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.ellipse(256, 358, 170, 240, 0, 0, 2 * Math.PI);
+    ctx.ellipse(256, 358, 160, 230, 0, 0, 2 * Math.PI);
     ctx.stroke();
 
     // Inner oval fill
-    const ovalGrad = ctx.createRadialGradient(256, 358, 20, 256, 358, 200);
-    ovalGrad.addColorStop(0, '#1a334d');
-    ovalGrad.addColorStop(1, '#0b1622');
+    const ovalGrad = ctx.createRadialGradient(256, 358, 20, 256, 358, 190);
+    ovalGrad.addColorStop(0, '#162e44');
+    ovalGrad.addColorStop(1, '#09131d');
     ctx.fillStyle = ovalGrad;
     ctx.fill();
 
-    // Runic dots in center (5 colors of mana representation)
+    // Mana orbs
     const manaColors = ['#f8e7b9', '#0e68ab', '#150b00', '#d3202a', '#00733e'];
     manaColors.forEach((color, i) => {
       const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-      const x = 256 + Math.cos(angle) * 70;
-      const y = 358 + Math.sin(angle) * 70;
+      const x = 256 + Math.cos(angle) * 65;
+      const y = 358 + Math.sin(angle) * 65;
       ctx.beginPath();
-      ctx.arc(x, y, 14, 0, 2 * Math.PI);
+      ctx.arc(x, y, 13, 0, 2 * Math.PI);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     });
 
-    // Magic: The Gathering text representation
     ctx.fillStyle = '#e2c56a';
-    ctx.font = 'bold 28px serif';
+    ctx.font = 'bold 26px serif';
     ctx.textAlign = 'center';
     ctx.fillText('MAGIC 3D', 256, 230);
-    ctx.font = 'italic 18px serif';
+    ctx.font = 'italic 16px serif';
     ctx.fillText('THE GATHERING', 256, 490);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  textureCache.set('__mtg_back__', texture);
   return texture;
 }
 
-// Procedural Card Front Fallback (Black Lotus Arcane Demo Front)
-function createCardFrontFallback(name = 'Black Lotus'): THREE.CanvasTexture {
+// Procedural Card Front Fallback
+function getFallbackFrontTexture(name: string): THREE.Texture {
+  const cacheKey = `__fallback_${name}__`;
+  if (textureCache.has(cacheKey)) {
+    return textureCache.get(cacheKey)!;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 716;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // Outer black border
-    ctx.fillStyle = '#0a0a0d';
+    ctx.fillStyle = '#08090c';
     ctx.fillRect(0, 0, 512, 716);
 
-    // Frame gradient (Artifact / Arcane)
     const frameGrad = ctx.createLinearGradient(0, 0, 512, 716);
-    frameGrad.addColorStop(0, '#2d3748');
-    frameGrad.addColorStop(1, '#1a202c');
+    frameGrad.addColorStop(0, '#1e293b');
+    frameGrad.addColorStop(1, '#0f172a');
     ctx.fillStyle = frameGrad;
-    ctx.fillRect(24, 24, 464, 668);
+    ctx.fillRect(20, 20, 472, 676);
 
-    // Title Bar
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(36, 36, 440, 48);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(32, 32, 448, 44);
     ctx.strokeStyle = '#06b6d4';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(36, 36, 440, 48);
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(32, 32, 448, 44);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(name, 48, 68);
+    ctx.fillText(name, 44, 62);
 
-    // Mana Cost Circle
-    ctx.beginPath();
-    ctx.arc(448, 60, 16, 0, 2 * Math.PI);
-    ctx.fillStyle = '#475569';
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('{0}', 448, 66);
-
-    // Art Box
-    const artGrad = ctx.createRadialGradient(256, 230, 30, 256, 230, 180);
-    artGrad.addColorStop(0, '#3b0764');
-    artGrad.addColorStop(0.5, '#1e1b4b');
-    artGrad.addColorStop(1, '#030712');
+    const artGrad = ctx.createRadialGradient(256, 220, 20, 256, 220, 160);
+    artGrad.addColorStop(0, '#312e81');
+    artGrad.addColorStop(1, '#020617');
     ctx.fillStyle = artGrad;
-    ctx.fillRect(36, 92, 440, 260);
+    ctx.fillRect(32, 84, 448, 250);
 
-    // Lotus flower glow artwork
-    ctx.beginPath();
-    ctx.arc(256, 230, 60, 0, 2 * Math.PI);
-    ctx.fillStyle = '#8b5cf6';
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(256, 230, 35, 0, 2 * Math.PI);
-    ctx.fillStyle = '#06b6d4';
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#38bdf8';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✨ 3D HOLO ARTIFACT ✨', 256, 235);
+    ctx.fillText('✨ MAGIC 3D EXPLORER ✨', 256, 225);
 
-    // Type Line Bar
     ctx.fillStyle = '#1e293b';
-    ctx.fillRect(36, 360, 440, 38);
-    ctx.strokeRect(36, 360, 440, 38);
+    ctx.fillRect(32, 342, 448, 34);
     ctx.fillStyle = '#94a3b8';
-    ctx.font = 'bold 17px sans-serif';
+    ctx.font = 'bold 15px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Artifact • Rare', 48, 385);
+    ctx.fillText('Artifact • Rare', 44, 365);
 
-    // Text Box
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(36, 406, 440, 230);
-    ctx.strokeRect(36, 406, 440, 230);
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(32, 384, 448, 240);
 
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '16px serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('{T}, Sacrifice Black Lotus:', 52, 445);
-    ctx.fillText('Add three mana of any one color.', 52, 475);
-
-    ctx.fillStyle = '#64748b';
-    ctx.font = 'italic 14px serif';
-    ctx.fillText('“A relic of power preserved in the digital void.”', 52, 570);
-
-    // Bottom Bar (Artist & Set)
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('Illus. Christopher Rush • Magic 3D', 48, 665);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '15px serif';
+    ctx.fillText('Explora el universo de Magic en 3D.', 44, 420);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  textureCache.set(cacheKey, texture);
   return texture;
 }
 
@@ -187,37 +159,44 @@ export const Card3D: React.FC<Card3DProps> = ({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  // Textures
-  const cardBackTexture = useMemo(() => createCardBackTexture(), []);
-  const defaultFrontTexture = useMemo(() => createCardFrontFallback(name), [name]);
+  const cardBackTexture = useMemo(() => getCardBackTexture(), []);
+  const fallbackFrontTexture = useMemo(() => getFallbackFrontTexture(name), [name]);
 
-  // Load external image texture if provided
+  // Load external image with texture caching
   const frontTexture = useMemo(() => {
-    if (!frontImageUrl) return defaultFrontTexture;
+    if (!frontImageUrl) return fallbackFrontTexture;
+
+    if (textureCache.has(frontImageUrl)) {
+      return textureCache.get(frontImageUrl)!;
+    }
+
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = 'anonymous';
     const tex = loader.load(
       frontImageUrl,
+      () => {
+        tex.needsUpdate = true;
+      },
       undefined,
-      undefined,
-      () => console.warn('Failed to load card front texture, using fallback')
+      () => console.warn('Could not load card texture, using fallback')
     );
     tex.colorSpace = THREE.SRGBColorSpace;
+    textureCache.set(frontImageUrl, tex);
     return tex;
-  }, [frontImageUrl, defaultFrontTexture]);
+  }, [frontImageUrl, fallbackFrontTexture]);
 
-  // Materials for BoxGeometry (right, left, top, bottom, front, back)
+  // Reusable materials
   const materials = useMemo(() => {
     const edgeMaterial = new THREE.MeshStandardMaterial({
-      color: '#0f172a',
-      roughness: 0.8,
+      color: '#0a0d14',
+      roughness: 0.9,
       metalness: 0.1,
     });
 
     const frontMaterial = new THREE.MeshStandardMaterial({
       map: frontTexture,
       roughness: 0.35,
-      metalness: 0.15,
+      metalness: 0.1,
     });
 
     const backMaterial = new THREE.MeshStandardMaterial({
@@ -226,45 +205,32 @@ export const Card3D: React.FC<Card3DProps> = ({
       metalness: 0.1,
     });
 
-    return [
-      edgeMaterial,  // Right
-      edgeMaterial,  // Left
-      edgeMaterial,  // Top
-      edgeMaterial,  // Bottom
-      frontMaterial, // Front (+Z)
-      backMaterial,  // Back (-Z)
-    ];
+    return [edgeMaterial, edgeMaterial, edgeMaterial, edgeMaterial, frontMaterial, backMaterial];
   }, [frontTexture, cardBackTexture]);
 
-  // Smooth floating animation
+  // Floating animation with reduced math complexity
   useFrame((state) => {
     if (!meshRef.current) return;
     const t = state.clock.getElapsedTime();
 
     if (isFloating) {
-      // Gentle breathing float
-      meshRef.current.position.y = Math.sin(t * 1.5) * 0.12 + 0.2;
-      // Gentle tilt sway
+      meshRef.current.position.y = Math.sin(t * 1.5) * 0.08 + 0.15;
       meshRef.current.rotation.y = THREE.MathUtils.lerp(
         meshRef.current.rotation.y,
-        Math.sin(t * 0.8) * 0.15 + (hovered ? 0.3 : 0),
-        0.05
+        Math.sin(t * 0.7) * 0.12 + (hovered ? 0.25 : 0),
+        0.06
       );
-      meshRef.current.rotation.z = Math.cos(t * 1.2) * 0.03;
+      meshRef.current.rotation.z = Math.cos(t * 1.1) * 0.02;
     }
 
-    // Scale lerp on hover
-    const targetScale = hovered ? 1.06 : 1.0;
-    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+    const targetScale = hovered ? 1.05 : 1.0;
+    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
   });
 
   return (
     <group position={[0, 0, 0]}>
-      {/* 3D Physical Card Mesh */}
       <mesh
         ref={meshRef}
-        castShadow
-        receiveShadow
         material={materials}
         onClick={(e) => {
           e.stopPropagation();
@@ -280,16 +246,14 @@ export const Card3D: React.FC<Card3DProps> = ({
           document.body.style.cursor = 'auto';
         }}
       >
-        {/* Magic card proportions: 2.5 width x 3.5 height x 0.02 depth */}
-        <boxGeometry args={[2.5, 3.5, 0.025]} />
+        <boxGeometry args={[2.5, 3.5, 0.022]} />
       </mesh>
 
-      {/* Subtle glowing halo beneath the floating card */}
       <pointLight
-        position={[0, 0, -0.2]}
-        intensity={hovered ? 1.5 : 0.8}
+        position={[0, 0, -0.15]}
+        intensity={hovered ? 1.2 : 0.6}
         color={accentColor}
-        distance={4}
+        distance={3.5}
       />
     </group>
   );
