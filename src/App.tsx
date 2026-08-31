@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
-import { Routes, Route, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 
 // Componentes de Navegación y UI Global
@@ -294,23 +294,45 @@ export const App: React.FC = () => {
     );
   };
 
-  // Resuelve el mazo específico solicitado en la URL (/deck-3d/:deckId)
+  // Resuelve el mazo específico solicitado en la URL (/deck-3d/:deckId o /deck-3d?deck=...)
   const Deck3DRoute: React.FC = () => {
     const { deckId } = useParams<{ deckId?: string }>();
+    const [searchParams] = useSearchParams();
+    const sharedDeckQuery = searchParams.get('deck');
+
     const targetDeck = useMemo(() => {
-      if (deckId) {
-        return decks.find((d) => d.id === deckId) || decks[0] || null;
+      // 1. Si viene un payload de mazo compartido en el query parameter (?deck=...)
+      if (sharedDeckQuery) {
+        const decoded = decodeSharedDeck(sharedDeckQuery);
+        if (decoded) return decoded;
       }
+
+      // 2. Si viene un deckId específico (/deck-3d/:deckId)
+      if (deckId) {
+        return decks.find((d) => d.id === deckId) || null;
+      }
+
+      // 3. Fallback al primer mazo guardado
       return decks[0] || null;
-    }, [deckId]);
+    }, [deckId, sharedDeckQuery]);
 
     if (!targetDeck) {
       return <Navigate to="/decks" replace />;
     }
 
+    const isSharedNotSaved = !decks.some((d) => d.id === targetDeck.id);
+
     return (
       <Deck3DPage
         deck={targetDeck}
+        isSharedDeck={isSharedNotSaved}
+        onSaveSharedDeck={(deckToSave) => {
+          importDeck(deckToSave);
+          if (user && !user.isAnonymous) {
+            saveCloudDeck(user.uid, deckToSave).catch(console.warn);
+          }
+          showToast('Mazo Guardado', `"${deckToSave.name}" se guardó en tu biblioteca`);
+        }}
         onBackToDecks={() => handleNavigate('decks')}
         onInspectCard={handleInspectIn3D}
       />

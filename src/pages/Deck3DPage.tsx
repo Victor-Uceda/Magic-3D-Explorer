@@ -10,6 +10,8 @@ import {
   Box,
   Eye,
   Share2,
+  Check,
+  Download,
 } from 'lucide-react';
 import Lighting from '../three/Lighting';
 import CameraController from '../three/CameraController';
@@ -23,12 +25,16 @@ import type { Card } from '../types/card';
 
 interface Deck3DPageProps {
   deck: DeckItem;
+  isSharedDeck?: boolean;
+  onSaveSharedDeck?: (deck: DeckItem) => void;
   onBackToDecks: () => void;
   onInspectCard: (card: Card) => void;
 }
 
 export const Deck3DPage: React.FC<Deck3DPageProps> = ({
   deck,
+  isSharedDeck = false,
+  onSaveSharedDeck,
   onBackToDecks,
   onInspectCard,
 }) => {
@@ -36,6 +42,8 @@ export const Deck3DPage: React.FC<Deck3DPageProps> = ({
   const [isCascading, setIsCascading] = useState(true);
   const [isSpread, setIsSpread] = useState(true); // Modo Abanico / Cascada por defecto
   const [enableParticles, setEnableParticles] = useState(false); // Sin partículas por defecto
+  const [isCopiedShare, setIsCopiedShare] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Reiniciar carta activa si cambia el mazo
   useEffect(() => {
@@ -148,8 +156,27 @@ export const Deck3DPage: React.FC<Deck3DPageProps> = ({
           <span className="badge-set">{deck.format.toUpperCase()} ({totalCardsCount} cartas)</span>
         </div>
 
-        {/* Market Value Badge & Share */}
+        {/* Market Value Badge, Save & Share */}
         <div className="viewer-quick-actions">
+          {isSharedDeck && onSaveSharedDeck && (
+            <button
+              type="button"
+              className={`viewer-action-btn ${isSaved ? 'viewer-fav-active' : ''}`}
+              onClick={() => {
+                onSaveSharedDeck(deck);
+                setIsSaved(true);
+              }}
+              title="Guardar este mazo compartido en tu biblioteca de mazos"
+              style={{
+                borderColor: isSaved ? '#10b981' : 'var(--accent-gold)',
+                color: isSaved ? '#34d399' : '#f8fafc',
+              }}
+            >
+              {isSaved ? <Check size={14} /> : <Download size={14} color="var(--accent-gold)" />}
+              <span>{isSaved ? '¡Mazo Guardado!' : 'Guardar en Mis Mazos'}</span>
+            </button>
+          )}
+
           <button
             type="button"
             className="viewer-action-btn"
@@ -157,14 +184,16 @@ export const Deck3DPage: React.FC<Deck3DPageProps> = ({
               try {
                 const url = getDeckShareUrl(deck);
                 await navigator.clipboard.writeText(url);
+                setIsCopiedShare(true);
+                setTimeout(() => setIsCopiedShare(false), 2500);
               } catch {
                 // fallback
               }
             }}
             title="Copiar enlace directo para compartir este mazo en 3D"
           >
-            <Share2 size={14} />
-            <span>Compartir Mazo 3D</span>
+            {isCopiedShare ? <Check size={14} color="#10b981" /> : <Share2 size={14} />}
+            <span>{isCopiedShare ? '¡Enlace Copiado!' : 'Compartir Mazo 3D'}</span>
           </button>
 
           <div className="viewer-action-btn" style={{ cursor: 'default' }}>

@@ -63,9 +63,19 @@ export function getDeckShareUrl(deck: DeckItem): string {
  */
 export function decodeSharedDeck(encoded: string): DeckItem | null {
   try {
+    let raw = encoded;
+    if (raw.includes('%')) {
+      try {
+        raw = decodeURIComponent(raw);
+      } catch {
+        // fallback
+      }
+    }
+    raw = raw.replace(/ /g, '+');
+
     const decodedBase64 = decodeURIComponent(
       Array.prototype.map
-        .call(atob(encoded), (c: string) => {
+        .call(atob(raw), (c: string) => {
           return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         })
         .join('')
