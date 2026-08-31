@@ -4,6 +4,7 @@ import { defaultStorageRepository, ICardStorageRepository } from '../services/st
 
 export interface UseFavoritesReturn {
   favorites: Card[];
+  setFavorites: React.Dispatch<React.SetStateAction<Card[]>>;
   toggleFavorite: (card: Card) => void;
   isFavorite: (cardId: string) => boolean;
   clearFavorites: () => void;
@@ -12,7 +13,18 @@ export interface UseFavoritesReturn {
 export function useFavorites(
   storageRepo: ICardStorageRepository = defaultStorageRepository
 ): UseFavoritesReturn {
-  const [favorites, setFavorites] = useState<Card[]>(() => storageRepo.getFavorites());
+  const [favorites, setFavoritesState] = useState<Card[]>(() => storageRepo.getFavorites());
+
+  const setFavorites: React.Dispatch<React.SetStateAction<Card[]>> = useCallback(
+    (action) => {
+      setFavoritesState((prev) => {
+        const next = typeof action === 'function' ? (action as (prev: Card[]) => Card[])(prev) : action;
+        storageRepo.saveFavorites(next);
+        return next;
+      });
+    },
+    [storageRepo]
+  );
 
   // Persistir en el repositorio cada vez que cambien
   useEffect(() => {
@@ -27,7 +39,7 @@ export function useFavorites(
       }
       return [card, ...prev];
     });
-  }, []);
+  }, [setFavorites]);
 
   const isFavorite = useCallback(
     (cardId: string) => favorites.some((c) => c.id === cardId),
@@ -36,10 +48,11 @@ export function useFavorites(
 
   const clearFavorites = useCallback(() => {
     setFavorites([]);
-  }, []);
+  }, [setFavorites]);
 
   return {
     favorites,
+    setFavorites,
     toggleFavorite,
     isFavorite,
     clearFavorites,

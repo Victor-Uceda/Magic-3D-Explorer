@@ -35,7 +35,13 @@ const BoosterOpener = React.lazy(() => import('./components/BoosterOpener'));
 // Utilidades y Tipos
 import { decodeSharedDeck } from './utils/sharing';
 import { defaultStorageRepository } from './services/storage/cardStorage';
-import { saveCloudDeck, deleteCloudDeck, subscribeToCloudDecks } from './services/firebase/firestoreService';
+import {
+  saveCloudDeck,
+  deleteCloudDeck,
+  subscribeToCloudDecks,
+  saveCloudFavorites,
+  getCloudFavorites,
+} from './services/firebase/firestoreService';
 import type { Card } from './types/card';
 import type { AppRoute } from './types/navigation';
 
@@ -111,7 +117,7 @@ export const App: React.FC = () => {
   } = useCardSearch(filters);
 
   // Hook para gestión de cartas favoritas (conectado al Repositorio de Almacenamiento)
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, setFavorites, toggleFavorite, isFavorite } = useFavorites();
 
   // Hook para gestión de mazos (crear, editar, eliminar, importar)
   const { decks, setDecks, deleteDeck, updateDeck, importDeck } = useDecks();
@@ -135,33 +141,41 @@ export const App: React.FC = () => {
   const { user, logoutCurrentUser } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Sincronización automática en tiempo real con Cloud Firestore (Live Sync)
+  // Sincronización y aislamiento estricto por usuario con Cloud Firestore y LocalStorage
   useEffect(() => {
+    // 1. Configurar el scope de almacenamiento para el usuario activo
+    const activeUid = user && !user.isAnonymous ? user.uid : null;
+    defaultStorageRepository.setUserId(activeUid);
+
     if (!user || user.isAnonymous) {
-      // Usuario no autenticado / anónimo: mantener los mazos locales del navegador
-      const localDecks = defaultStorageRepository.getDecks();
-      if (localDecks.length > 0) {
-        setDecks(localDecks);
-      }
+      // Sesión no autenticada / cerrada: cargar únicamente los datos de invitado (limpio)
+      const guestDecks = defaultStorageRepository.getDecks();
+      setDecks(guestDecks);
+      const guestFavorites = defaultStorageRepository.getFavorites();
+      setFavorites(guestFavorites);
       return;
     }
 
-    // Escucha reactiva en vivo: cualquier cambio en la nube se refleja de inmediato
-    const unsubscribe = subscribeToCloudDecks(user.uid, (cloudDecks) => {
-      if (cloudDecks && cloudDecks.length > 0) {
-        setDecks(cloudDecks);
-      } else {
-        // Si el usuario en la nube aún no tiene mazos, sincronizar sus mazos locales hacia la nube
-        const localDecks = defaultStorageRepository.getDecks();
-        if (localDecks.length > 0) {
-          localDecks.forEach((d) => saveCloudDeck(user.uid, d).catch(console.warn));
-          setDecks(localDecks);
-        }
-      }
+    // 2. Usuario autenticado: Cargar sus propios mazos y favoritos aislados de Firestore
+    let isMounted = true;
+
+    const unsubscribeDecks = subscribeToCloudDecks(user.uid, (cloudDecks) => {
+      if (!isMounted) return;
+      setDecks(cloudDecks);
+      defaultStorageRepository.saveDecks(cloudDecks);
     });
 
-    return () => unsubscribe();
-  }, [user, setDecks]);
+    getCloudFavorites(user.uid).then((cloudFavs) => {
+      if (!isMounted) return;
+      setFavorites(cloudFavs);
+      defaultStorageRepository.saveFavorites(cloudFavs);
+    }).catch(console.warn);
+
+    return () => {
+      isMounted = false;
+      unsubscribeDecks();
+    };
+  }, [user, setDecks, setFavorites]);
 
   // Hook para orquestar la asignación de cartas a mazos desde cualquier pantalla
   const {
@@ -258,11 +272,15 @@ export const App: React.FC = () => {
     (card: Card) => {
       const alreadyFav = isFavorite(card.id);
       toggleFavorite(card);
+      if (user && !user.isAnonymous) {
+        const next = alreadyFav ? favorites.filter((c) => c.id !== card.id) : [card, ...favorites];
+        saveCloudFavorites(user.uid, next).catch(console.warn);
+      }
       showToast(
         alreadyFav ? `"${card.name}" eliminada de Favoritos` : `¡"${card.name}" guardada en Favoritos!`
       );
     },
-    [isFavorite, showToast, toggleFavorite]
+    [isFavorite, showToast, toggleFavorite, user, favorites]
   );
 
   // ==========================================
@@ -380,7 +398,13 @@ export const App: React.FC = () => {
           deckCount={decks.length}
           favoritesCount={favorites.length}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          onLogout={logoutCurrentUser}
+          onLogout={async () => {
+            await logoutCurrentUser();
+            defaultStorageRepository.setUserId(null);
+            setDecks([]);
+            setFavorites([]);
+            showToast('Sesión Cerrada', 'Has cerrado sesión correctamente');
+          }}
           isLoading={isLoading}
         />
       )}

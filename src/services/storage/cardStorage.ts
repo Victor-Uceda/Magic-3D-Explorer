@@ -15,6 +15,8 @@ import type { DeckItem } from '../../pages/DeckBuilderPage';
  * Contrato formal de persistencia para favoritos y mazos
  */
 export interface ICardStorageRepository {
+  /** Configura el usuario activo para aislar datos */
+  setUserId(userId: string | null): void;
   /** Obtiene la lista de cartas favoritas guardadas */
   getFavorites(): Card[];
   /** Guarda la colección completa de favoritos */
@@ -25,16 +27,32 @@ export interface ICardStorageRepository {
   saveDecks(decks: DeckItem[]): void;
 }
 
-const FAVORITES_STORAGE_KEY = 'magic3d_favorites_v2';
-const DECKS_STORAGE_KEY = 'magic3d_decks_v2';
-
 /**
  * Implementación concreta del repositorio usando el almacenamiento local del navegador (LocalStorage)
+ * Aislado estrictamente por Usuario (Multi-user Data Isolation)
  */
 export class LocalStorageCardRepository implements ICardStorageRepository {
+  private userId: string | null = null;
+
+  constructor(userId?: string | null) {
+    this.userId = userId || null;
+  }
+
+  setUserId(userId: string | null): void {
+    this.userId = userId;
+  }
+
+  private getDecksKey(): string {
+    return this.userId ? `magic3d_decks_user_${this.userId}` : `magic3d_decks_guest`;
+  }
+
+  private getFavoritesKey(): string {
+    return this.userId ? `magic3d_favorites_user_${this.userId}` : `magic3d_favorites_guest`;
+  }
+
   getFavorites(): Card[] {
     try {
-      const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      const saved = localStorage.getItem(this.getFavoritesKey());
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       console.warn('Error al leer favoritos desde localStorage:', e);
@@ -44,7 +62,7 @@ export class LocalStorageCardRepository implements ICardStorageRepository {
 
   saveFavorites(favorites: Card[]): void {
     try {
-      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+      localStorage.setItem(this.getFavoritesKey(), JSON.stringify(favorites));
     } catch (e) {
       console.warn('Error al guardar favoritos en localStorage:', e);
     }
@@ -52,7 +70,7 @@ export class LocalStorageCardRepository implements ICardStorageRepository {
 
   getDecks(): DeckItem[] {
     try {
-      const saved = localStorage.getItem(DECKS_STORAGE_KEY);
+      const saved = localStorage.getItem(this.getDecksKey());
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
@@ -65,7 +83,7 @@ export class LocalStorageCardRepository implements ICardStorageRepository {
 
   saveDecks(decks: DeckItem[]): void {
     try {
-      localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(decks));
+      localStorage.setItem(this.getDecksKey(), JSON.stringify(decks));
     } catch (e) {
       console.warn('Error al guardar mazos en localStorage:', e);
     }
@@ -75,4 +93,4 @@ export class LocalStorageCardRepository implements ICardStorageRepository {
 /**
  * Instancia global por defecto del repositorio (Inyección por defecto)
  */
-export const defaultStorageRepository: ICardStorageRepository = new LocalStorageCardRepository();
+export const defaultStorageRepository: LocalStorageCardRepository = new LocalStorageCardRepository();
