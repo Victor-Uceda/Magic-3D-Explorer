@@ -79,6 +79,8 @@ export interface ScryfallCard {
   toughness?: string;
   loyalty?: string;
   scryfall_uri?: string;
+  prints_search_uri?: string;
+  oracle_id?: string;
   released_at?: string;
   layout?: string;
 }

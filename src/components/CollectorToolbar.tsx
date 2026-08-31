@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Palette, Zap, Check, X, Loader2, Repeat, Sparkles } from 'lucide-react';
-import { scryfallClient, mapScryfallCardToDomain } from '../services/scryfall';
+import { Palette, Zap, Repeat, Sparkles } from 'lucide-react';
+import { CardVariantsModal } from './cards/CardVariantsModal';
 import type { Card } from '../types/card';
 import type { CardFinish } from '../three/Card3D';
 
@@ -24,35 +24,23 @@ export const CollectorToolbar: React.FC<CollectorToolbarProps> = ({
   onToggleFlip,
 }) => {
   const [isArtModalOpen, setIsArtModalOpen] = useState(false);
-  const [variants, setVariants] = useState<Card[]>([]);
-  const [isLoadingVariants, setIsLoadingVariants] = useState(false);
 
-  // Load alternative printings when modal opens
+  // Keyboard shortcut 'V' to toggle variants modal
   useEffect(() => {
-    if (!isArtModalOpen || !currentCard?.name) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      const isInputActive = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+      if (isInputActive) return;
 
-    let isMounted = true;
-    const fetchPrints = async () => {
-      setIsLoadingVariants(true);
-      try {
-        const rawPrints = await scryfallClient.getCardPrints(currentCard.name);
-        if (isMounted) {
-          const domainPrints = rawPrints.map(mapScryfallCardToDomain);
-          setVariants(domainPrints);
-        }
-      } catch (err) {
-        console.warn('No se pudieron cargar variantes:', err);
-        if (isMounted) setVariants([]);
-      } finally {
-        if (isMounted) setIsLoadingVariants(false);
+      if (e.key === 'v' || e.key === 'V') {
+        e.preventDefault();
+        setIsArtModalOpen((prev) => !prev);
       }
     };
 
-    fetchPrints();
-    return () => {
-      isMounted = false;
-    };
-  }, [isArtModalOpen, currentCard?.name]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   if (!currentCard) return null;
 
@@ -107,7 +95,7 @@ export const CollectorToolbar: React.FC<CollectorToolbarProps> = ({
           >
             <Repeat size={13} />
             <span>Voltear</span>
-            <span className="finish-shortcut">ESPACIO</span>
+            <span className="tool-shortcut">ESPACIO</span>
           </button>
         )}
 
@@ -120,96 +108,17 @@ export const CollectorToolbar: React.FC<CollectorToolbarProps> = ({
         >
           <Palette size={13} />
           <span>Variantes</span>
-          <span className="finish-shortcut">V</span>
+          <span className="tool-shortcut">V</span>
         </button>
       </div>
 
       {/* Alternative Art Variants Studio Modal */}
-      {isArtModalOpen && (
-        <div
-          className="modal-backdrop"
-          onClick={() => setIsArtModalOpen(false)}
-        >
-          <div
-            className="variants-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="variants-modal-header">
-              <div>
-                <h3 className="variants-modal-title">Variantes & Ilustraciones Alternativas</h3>
-                <p className="variants-modal-subtitle">
-                  {currentCard.name} — Selecciona una impresión para verla en 3D
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsArtModalOpen(false)}
-                className="modal-close-btn"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="variants-modal-body">
-              {isLoadingVariants && (
-                <div className="variants-loading-state">
-                  <Loader2 size={24} className="spin" color="var(--accent-gold)" />
-                  <span>Buscando todas las impresiones en Scryfall...</span>
-                </div>
-              )}
-
-              {!isLoadingVariants && variants.length === 0 && (
-                <div className="variants-empty-state">
-                  <p>No se encontraron impresiones alternativas registradas.</p>
-                </div>
-              )}
-
-              {!isLoadingVariants && variants.length > 0 && (
-                <div className="variants-grid">
-                  {variants.map((variant) => {
-                    const isSelected = variant.id === currentCard.id;
-                    const usd = variant.prices.usd ? `$${variant.prices.usd}` : null;
-                    const pen = variant.prices.usd ? `S/ ${(parseFloat(variant.prices.usd) * 3.75).toFixed(2)}` : null;
-                    return (
-                      <div
-                        key={variant.id}
-                        onClick={() => {
-                          onSelectPrintVariant(variant);
-                          setIsArtModalOpen(false);
-                        }}
-                        className={`variant-card-item ${isSelected ? 'variant-card-selected' : ''}`}
-                      >
-                        <div className="variant-img-wrapper">
-                          <img
-                            src={variant.imageUris.normal || variant.imageUris.small}
-                            alt={variant.name}
-                            loading="lazy"
-                          />
-                          {isSelected && (
-                            <div className="variant-selected-badge">
-                              <Check size={12} />
-                              <span>Activa</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="variant-meta">
-                          <span className="variant-set">{variant.setName}</span>
-                          <div className="variant-details">
-                            <span className="variant-collector">#{variant.collectorNumber}</span>
-                            <span className="variant-price">{pen || usd || 'N/D'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <CardVariantsModal
+        isOpen={isArtModalOpen}
+        onClose={() => setIsArtModalOpen(false)}
+        currentCard={currentCard}
+        onSelectVariant={onSelectPrintVariant}
+      />
     </>
   );
 };

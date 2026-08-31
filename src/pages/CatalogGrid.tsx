@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   Search,
   SlidersHorizontal,
@@ -43,7 +43,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
   onLoadMore,
   totalCardsCount,
   errorMessage,
-  searchSummary,
+  searchSummary: _searchSummary,
   sortBy,
   onSortChange,
   filters,
@@ -54,6 +54,37 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
   activeFilterCount,
 }) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Ordenamiento memoizado en memoria
+  const sortedCards = useMemo(() => {
+    const list = [...cards];
+    switch (sortBy) {
+      case 'name':
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+      case 'price-desc':
+        return list.sort((a, b) => {
+          const pA = a.prices.usd ? parseFloat(a.prices.usd) : -1;
+          const pB = b.prices.usd ? parseFloat(b.prices.usd) : -1;
+          return pB - pA;
+        });
+      case 'price-asc':
+        return list.sort((a, b) => {
+          const pA = a.prices.usd ? parseFloat(a.prices.usd) : 999999;
+          const pB = b.prices.usd ? parseFloat(b.prices.usd) : 999999;
+          return pA - pB;
+        });
+      case 'cmc-desc':
+        return list.sort((a, b) => b.cmc - a.cmc);
+      case 'cmc-asc':
+        return list.sort((a, b) => a.cmc - b.cmc);
+      case 'rarity': {
+        const rarityWeight: Record<string, number> = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
+        return list.sort((a, b) => (rarityWeight[b.rarity] || 0) - (rarityWeight[a.rarity] || 0));
+      }
+      default:
+        return list;
+    }
+  }, [cards, sortBy]);
 
   // IntersectionObserver for seamless Infinite Scroll proximity triggering
   useEffect(() => {
@@ -68,7 +99,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
           onLoadMore();
         }
       },
-      { rootMargin: '400px', threshold: 0.1 }
+      { rootMargin: '800px', threshold: 0.05 }
     );
 
     observer.observe(sentinel);
@@ -85,14 +116,9 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
             {isLoading
               ? 'Buscando...'
               : totalCardsCount !== undefined
-              ? `${totalCardsCount.toLocaleString()} cartas encontradas (${cards.length} cargadas)`
-              : `${cards.length} cartas disponibles`}
+              ? `${totalCardsCount.toLocaleString()} cartas`
+              : `${cards.length} cartas`}
           </span>
-          {searchSummary && (
-            <span className="catalog-query-badge" title="Filtro activo">
-              {searchSummary}
-            </span>
-          )}
         </div>
 
         <div className="catalog-toolbar-right">
@@ -212,10 +238,10 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
       )}
 
       {/* Cards Responsive Grid */}
-      {cards.length > 0 && (
+      {sortedCards.length > 0 && (
         <>
           <div className="catalog-cards-grid">
-            {cards.map((card) => {
+            {sortedCards.map((card) => {
               const pricePen = formatPricePEN(card.prices.usd);
               return (
                 <div
@@ -226,9 +252,10 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
                 >
                   <div className="card-media-wrapper">
                     <img
-                      src={card.imageUris.normal || card.imageUris.small}
+                      src={card.imageUris.small || card.imageUris.normal}
                       alt={card.name}
                       loading="lazy"
+                      decoding="async"
                     />
                     <div className="card-3d-badge-pill">
                       <Box size={12} />

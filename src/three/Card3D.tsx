@@ -1,6 +1,21 @@
+/**
+ * Modelo 3D de Carta Magic: The Gathering (Card3D.tsx)
+ * 
+ * Conceptos Clave de Gráficos 3D Implementados:
+ * 1. Geometría Paramétrica MTG: Genera la forma con esquinas redondeadas auténticas y extrusión física.
+ * 2. Mapeo UV Frontal y Posterior: Proyecta texturas en ambas caras sin invertir o espejar el texto.
+ * 3. Patrón Strategy en Acabados de Materiales (PBR):
+ *    - Normal: MeshStandardMaterial clásico con rugosidad equilibrada.
+ *    - Foil: MeshPhysicalMaterial con capa de iridiscencia espectral (140-500nm).
+ *    - Etched: MeshPhysicalMaterial con micro-grabado y alta reflectividad metálica.
+ * 4. Animación en Frame Loop (useFrame): Interpolación suave (Lerp) para rotación, flotación y volteo 3D.
+ * 5. Caché Global de Texturas: Reutiliza texturas WebGL para evitar pausas por Garbage Collection.
+ */
+
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
+import { CARD_DIMENSIONS, ANIMATION_CONSTANTS, TEXTURE_URLS } from '../constants/card3D';
 
 export type CardFinish = 'normal' | 'foil' | 'etched';
 
@@ -15,13 +30,10 @@ interface Card3DProps {
   manaAuraColor?: string;
 }
 
-// Global Texture Cache to prevent GC pauses on card searches
+// Caché global de texturas para evitar pausas por Garbage Collection en búsquedas
 const textureCache = new Map<string, THREE.Texture>();
 
-// Official high-res Magic: The Gathering Card Back URL
-const OFFICIAL_MTG_CARD_BACK_URL = 'https://backs.scryfall.io/large/5/9/597b79b3-7d77-4261-871a-60dd17403388.jpg';
-
-// Procedural / Loaded Card Back Texture
+// Carga y obtención de la textura de reverso de la carta
 function getCardBackTexture(): THREE.Texture {
   if (textureCache.has('__mtg_official_back__')) {
     return textureCache.get('__mtg_official_back__')!;
@@ -30,7 +42,7 @@ function getCardBackTexture(): THREE.Texture {
   const loader = new THREE.TextureLoader();
   loader.crossOrigin = 'anonymous';
   const texture = loader.load(
-    OFFICIAL_MTG_CARD_BACK_URL,
+    TEXTURE_URLS.OFFICIAL_MTG_CARD_BACK,
     () => {
       texture.needsUpdate = true;
     },
@@ -43,7 +55,7 @@ function getCardBackTexture(): THREE.Texture {
   return texture;
 }
 
-// Procedural Card Front Fallback
+// Generador procedural de respaldo para el anverso de la carta
 function getFallbackFrontTexture(name: string): THREE.Texture {
   const cacheKey = `__fallback_${name}__`;
   if (textureCache.has(cacheKey)) {
@@ -67,7 +79,7 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
 
     ctx.fillStyle = '#16181d';
     ctx.fillRect(32, 32, 448, 44);
-    ctx.strokeStyle = '#d4af37';
+    ctx.strokeStyle = '#b8964e';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(32, 32, 448, 44);
 
@@ -82,7 +94,7 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
     ctx.fillStyle = artGrad;
     ctx.fillRect(32, 84, 448, 250);
 
-    ctx.fillStyle = '#d4af37';
+    ctx.fillStyle = '#b8964e';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('✨ MAGIC 3D EXPLORER ✨', 256, 225);
@@ -108,7 +120,7 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
   return texture;
 }
 
-// Creates authentic MTG card shape with smooth rounded corners
+// Crea la forma geométrica auténtica de carta MTG con esquinas redondeadas
 function createRoundedCardShape(w: number, h: number, r: number): THREE.Shape {
   const shape = new THREE.Shape();
   const x = -w / 2;
@@ -127,7 +139,7 @@ function createRoundedCardShape(w: number, h: number, r: number): THREE.Shape {
   return shape;
 }
 
-// Generates UV coordinates for front or back rounded face
+// Genera coordenadas UV mapeadas para las caras frontal y posterior
 function createCardFaceGeometry(w: number, h: number, r: number): THREE.BufferGeometry {
   const shape = createRoundedCardShape(w, h, r);
   const geom = new THREE.ShapeGeometry(shape, 32);
@@ -138,7 +150,7 @@ function createCardFaceGeometry(w: number, h: number, r: number): THREE.BufferGe
   for (let i = 0; i < pos.count; i++) {
     const px = pos.getX(i);
     const py = pos.getY(i);
-    // Left-to-right UV mapping (Mesh Y-rotation handles back positioning without mirroring text)
+    // Mapeo UV de izquierda a derecha (la rotación Y del mesh maneja el reverso sin espejar el texto)
     const u = (px + w / 2) / w;
     const v = (py + h / 2) / h;
     uvs[i * 2] = u;
@@ -165,7 +177,7 @@ export const Card3D: React.FC<Card3DProps> = ({
   const defaultBackTexture = useMemo(() => getCardBackTexture(), []);
   const fallbackFrontTexture = useMemo(() => getFallbackFrontTexture(name), [name]);
 
-  // Load front image with texture caching
+  // Carga la textura frontal con almacenamiento en caché
   const frontTexture = useMemo(() => {
     if (!frontImageUrl) return fallbackFrontTexture;
 
@@ -188,7 +200,7 @@ export const Card3D: React.FC<Card3DProps> = ({
     return tex;
   }, [frontImageUrl, fallbackFrontTexture]);
 
-  // Load back image (DFC second face or default card back)
+  // Carga la textura trasera (segunda cara para cartas DFC o reverso por defecto)
   const backTexture = useMemo(() => {
     if (!backImageUrl) return defaultBackTexture;
 
@@ -211,14 +223,14 @@ export const Card3D: React.FC<Card3DProps> = ({
     return tex;
   }, [backImageUrl, defaultBackTexture]);
 
-  // Rounded MTG Card Geometries (Width: 2.5, Height: 3.5, Radius: 0.12)
+  // Geometrías redondeadas para carta MTG
   const { frontGeom, backGeom, edgeGeom } = useMemo(() => {
-    const w = 2.5;
-    const h = 3.5;
-    const r = 0.12; // Authentic MTG rounded corner radius
+    const w = CARD_DIMENSIONS.WIDTH;
+    const h = CARD_DIMENSIONS.HEIGHT;
+    const r = CARD_DIMENSIONS.CORNER_RADIUS;
     const shape = createRoundedCardShape(w, h, r);
     const extrude = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.016,
+      depth: CARD_DIMENSIONS.DEPTH,
       bevelEnabled: false,
     });
     extrude.center();
@@ -230,25 +242,33 @@ export const Card3D: React.FC<Card3DProps> = ({
     };
   }, []);
 
-  // Floating & 3D Flip animation
+  // Animación de flotación y volteo 3D suave
   useFrame((state) => {
     if (!groupRef.current) return;
     const t = state.clock.getElapsedTime();
 
     if (isFloating) {
-      groupRef.current.position.y = Math.sin(t * 1.5) * 0.08 + 0.15;
-      
+      groupRef.current.position.y =
+        Math.sin(t * ANIMATION_CONSTANTS.FLOAT_FREQUENCY) * ANIMATION_CONSTANTS.FLOAT_AMPLITUDE + 0.15;
+
       const baseFlipRotation = isFlipped ? Math.PI : 0;
       const wobble = Math.sin(t * 0.7) * 0.08 + (hovered ? 0.18 : 0);
       const targetRotY = baseFlipRotation + (isFlipped ? -wobble : wobble);
 
-      // Snappy and smooth 3D flip animation
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotY, 0.22);
+      // Transición suave e interactiva del volteo
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(
+        groupRef.current.rotation.y,
+        targetRotY,
+        ANIMATION_CONSTANTS.ROTATION_LERP_SPEED
+      );
       groupRef.current.rotation.z = Math.cos(t * 1.1) * 0.02;
     }
 
     const targetScale = hovered ? 1.05 : 1.0;
-    groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
+    groupRef.current.scale.lerp(
+      new THREE.Vector3(targetScale, targetScale, targetScale),
+      ANIMATION_CONSTANTS.SCALE_LERP_SPEED
+    );
   });
 
   const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -269,7 +289,7 @@ export const Card3D: React.FC<Card3DProps> = ({
     const elapsed = Date.now() - pointerDownPos.current.time;
     pointerDownPos.current = null;
 
-    // Only toggle flip if it was a quick stationary click, NOT an orbit drag
+    // Solo voltea si fue un clic rápido y estático, no un arrastre de cámara orbital
     if (dist < 6 && elapsed < 280) {
       e.stopPropagation();
       onCardClick?.();
@@ -278,7 +298,7 @@ export const Card3D: React.FC<Card3DProps> = ({
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Main 3D Rounded Card */}
+      {/* Grupo principal de la carta 3D */}
       <group
         ref={groupRef}
         onPointerDown={handlePointerDown}
@@ -293,7 +313,7 @@ export const Card3D: React.FC<Card3DProps> = ({
           document.body.style.cursor = 'auto';
         }}
       >
-        {/* Front Face with Rounded Corners - Dynamic Finish */}
+        {/* Cara frontal con esquinas redondeadas y acabado dinámico (Normal, Foil, Etched) */}
         <mesh geometry={frontGeom} position={[0, 0, 0.009]}>
           {finish === 'foil' ? (
             <meshPhysicalMaterial
@@ -330,7 +350,7 @@ export const Card3D: React.FC<Card3DProps> = ({
           )}
         </mesh>
 
-        {/* Back Face with Rounded Corners (180 deg) */}
+        {/* Cara posterior con esquinas redondeadas (rotada 180 grados) */}
         <mesh geometry={backGeom} position={[0, 0, -0.009]} rotation={[0, Math.PI, 0]}>
           <meshStandardMaterial
             map={backTexture}
@@ -340,7 +360,7 @@ export const Card3D: React.FC<Card3DProps> = ({
           />
         </mesh>
 
-        {/* Dark Card Edge Core */}
+        {/* Borde y núcleo oscuro de la carta */}
         <mesh geometry={edgeGeom} position={[0, 0, 0]}>
           <meshStandardMaterial
             color="#111317"

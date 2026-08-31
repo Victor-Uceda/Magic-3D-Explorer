@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ManaCost } from '../ManaCost';
 import { OracleText } from '../OracleText';
+import { formatPricePEN } from '../../utils/pricing';
 import type { Card } from '../../types/card';
 
 interface QuickViewModalProps {
@@ -35,7 +36,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
   if (!isOpen || !card) return null;
 
   const usd = card.prices.usd ? parseFloat(card.prices.usd) : null;
-  const pen = usd ? (usd * 3.75).toFixed(2) : null;
+  const pen = formatPricePEN(card.prices.usd);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

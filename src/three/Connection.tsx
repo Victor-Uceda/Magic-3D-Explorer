@@ -12,11 +12,11 @@ interface ConnectionProps {
 export const Connection: React.FC<ConnectionProps> = ({
   start = [0, 0, 0],
   end,
-  color = '#6366f1',
+  color = '#64748b',
   lineWidth = 1.8,
   isActive = false,
 }) => {
-  // Compute midpoint with an arc curve upwards
+  // Calcula el punto medio con una curva parabólica ascendente
   const midX = (start[0] + end[0]) / 2;
   const midY = (start[1] + end[1]) / 2 + 0.35;
   const midZ = (start[2] + end[2]) / 2;

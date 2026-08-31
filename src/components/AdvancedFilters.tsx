@@ -259,11 +259,11 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                     type="button"
                     onClick={() => selectFormat(fmt.code)}
                     style={{
-                      background: isSelected ? 'rgba(46, 125, 50, 0.3)' : 'rgba(255, 255, 255, 0.04)',
-                      border: `1px solid ${isSelected ? '#4ade80' : 'var(--border-subtle)'}`,
+                      background: isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                      border: `1px solid ${isSelected ? '#10b981' : 'var(--border-subtle)'}`,
                       borderRadius: 'var(--radius-sm)',
                       padding: '0.4rem 0.75rem',
-                      color: isSelected ? '#4ade80' : '#cbd5e1',
+                      color: isSelected ? '#10b981' : '#cbd5e1',
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                       display: 'flex',
@@ -273,7 +273,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                     }}
                   >
                     <span>{fmt.label}</span>
-                    {isSelected && <Check size={12} color="#4ade80" />}
+                    {isSelected && <Check size={12} color="#10b981" />}
                   </button>
                 );
               })}

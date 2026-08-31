@@ -8,7 +8,7 @@ interface ManaParticlesProps {
 }
 
 export const ManaParticles: React.FC<ManaParticlesProps> = ({
-  color = '#d4af37',
+  color = '#b8964e',
   count = 60,
 }) => {
   const pointsRef = useRef<THREE.Points>(null);
@@ -18,7 +18,7 @@ export const ManaParticles: React.FC<ManaParticlesProps> = ({
     const spd = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      // Cylindrical distribution around card
+      // Distribución cilíndrica alrededor de la carta
       const radius = 1.8 + Math.random() * 2.2;
       const theta = Math.random() * Math.PI * 2;
       const y = (Math.random() - 0.5) * 5;
@@ -27,9 +27,9 @@ export const ManaParticles: React.FC<ManaParticlesProps> = ({
       pos[i * 3 + 1] = y;
       pos[i * 3 + 2] = Math.sin(theta) * radius;
 
-      // Gentle floating speeds
+      // Velocidad suave de flotación
       spd[i * 3] = (Math.random() - 0.5) * 0.2;
-      spd[i * 3 + 1] = 0.15 + Math.random() * 0.35; // Gentle upward drift
+      spd[i * 3 + 1] = 0.15 + Math.random() * 0.35; // Deriva ascendente sutil
       spd[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
     }
 
@@ -42,14 +42,14 @@ export const ManaParticles: React.FC<ManaParticlesProps> = ({
     const array = posAttr.array as Float32Array;
 
     for (let i = 0; i < count; i++) {
-      // Move Y up
+      // Movimiento vertical hacia arriba
       array[i * 3 + 1] += speeds[i * 3 + 1] * delta;
 
-      // Small wobble
+      // Oscilación suave
       array[i * 3] += Math.sin(array[i * 3 + 1] * 2) * 0.003;
       array[i * 3 + 2] += Math.cos(array[i * 3 + 1] * 2) * 0.003;
 
-      // Wrap around vertical bounds
+      // Reubicar cuando exceda los límites verticales
       if (array[i * 3 + 1] > 2.8) {
         array[i * 3 + 1] = -2.8;
       }

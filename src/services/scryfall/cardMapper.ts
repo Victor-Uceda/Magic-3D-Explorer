@@ -2,13 +2,19 @@ import { ScryfallCard } from './types';
 import { Card, LegalityStatus } from '../../types/card';
 
 /**
- * Maps raw ScryfallCard payload to domain Card model
- * Handles regular cards and double-faced cards (DFC / Transform / Modal DFC)
+ * Mapeador de datos: Convierte la respuesta cruda de Scryfall al modelo de dominio limpio `Card`.
+ * 
+ * Gestiona:
+ * 1. Cartas normales de una sola cara.
+ * 2. Cartas de doble cara (DFC / Transformables / MDFC) extrayendo anverso y reverso.
+ * 3. Normalización de imágenes seguras sin valores nulos.
+ * 4. Conversión de legalidades por formato.
  */
 export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
+  // 1. Detectar si la carta tiene doble cara (DFC)
   const isDoubleFaced = Array.isArray(scryfallCard.card_faces) && scryfallCard.card_faces.length > 1;
 
-  // Extract images: check top-level image_uris, or fallback to first face for DFC
+  // 2. Extraer imágenes principales (de nivel superior o de la primera cara)
   let imageUris = scryfallCard.image_uris;
   if (!imageUris && isDoubleFaced && scryfallCard.card_faces?.[0]?.image_uris) {
     imageUris = scryfallCard.card_faces[0].image_uris;
@@ -23,7 +29,7 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     borderCrop: imageUris?.border_crop || '',
   };
 
-  // Mana cost & oracle text extraction
+  // 3. Extraer coste de maná, texto oráculo y tipo
   let manaCost = scryfallCard.mana_cost || '';
   let oracleText = scryfallCard.oracle_text || '';
   let typeLine = scryfallCard.type_line || '';
@@ -37,7 +43,7 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     if (!artist) artist = face0.artist || '';
   }
 
-  // Legalities conversion
+  // 4. Normalizar mapa de legalidades por formato
   const legalities: Record<string, LegalityStatus> = {};
   if (scryfallCard.legalities) {
     Object.entries(scryfallCard.legalities).forEach(([format, status]) => {
@@ -49,6 +55,7 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     });
   }
 
+  // 5. Extraer datos de la segunda cara si es DFC
   let backImageUri: string | undefined = undefined;
   let backName: string | undefined = undefined;
   let backTypeLine: string | undefined = undefined;
@@ -62,6 +69,7 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     backOracleText = face1.oracle_text;
   }
 
+  // 6. Retornar el objeto de dominio completo
   return {
     id: scryfallCard.id,
     name: scryfallCard.name,
@@ -100,6 +108,8 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     toughness: scryfallCard.toughness || undefined,
     loyalty: scryfallCard.loyalty || undefined,
     scryfallUri: scryfallCard.scryfall_uri || undefined,
+    printsSearchUri: scryfallCard.prints_search_uri || undefined,
+    oracleId: scryfallCard.oracle_id || undefined,
     isDoubleFaced,
     backImageUri,
     backName,

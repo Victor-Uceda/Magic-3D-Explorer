@@ -60,4 +60,6 @@ export interface Card {
   backName?: string;
   backTypeLine?: string;
   backOracleText?: string;
+  printsSearchUri?: string;
+  oracleId?: string;
 }

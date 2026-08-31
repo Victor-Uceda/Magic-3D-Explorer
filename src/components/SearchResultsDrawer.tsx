@@ -1,37 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Sparkles, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Sparkles, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { ManaCost } from './ManaCost';
 import { formatPricePEN } from '../utils/pricing';
 import { scryfallClient, mapScryfallCardToDomain } from '../services/scryfall';
 import type { Card } from '../types/card';
 
 interface SearchResultsDrawerProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-  cards: Card[];
   currentCard: Card;
   onSelectCard: (card: Card) => void;
-  totalCards?: number;
-  searchQueryDescription?: string;
 }
 
-type DrawerTab = 'synergies' | 'results';
+// Caché en memoria de sinergias para evitar re-peticiones y parpadeos al cambiar acabados o voltear
+const synergiesCache = new Map<string, Card[]>();
 
-export const SearchResultsDrawer: React.FC<SearchResultsDrawerProps> = ({
-  cards,
+export const SearchResultsDrawerComponent: React.FC<SearchResultsDrawerProps> = ({
   currentCard,
   onSelectCard,
-  totalCards = 0,
-  searchQueryDescription,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<DrawerTab>('synergies');
-  const [synergies, setSynergies] = useState<Card[]>([]);
+  const [synergies, setSynergies] = useState<Card[]>(() => {
+    return currentCard ? synergiesCache.get(currentCard.id) || [] : [];
+  });
   const [isLoadingSynergies, setIsLoadingSynergies] = useState(false);
 
-  // Fetch synergies whenever currentCard changes
+  // Fetch synergies whenever currentCard.id changes
   useEffect(() => {
-    if (!currentCard) return;
+    if (!currentCard || !currentCard.id) return;
+
+    // Si ya están en caché para esta carta, usarlas de inmediato
+    if (synergiesCache.has(currentCard.id)) {
+      setSynergies(synergiesCache.get(currentCard.id)!);
+      setIsLoadingSynergies(false);
+      return;
+    }
 
     let isMounted = true;
     const loadSynergies = async () => {
@@ -49,7 +50,9 @@ export const SearchResultsDrawer: React.FC<SearchResultsDrawerProps> = ({
         const q = queryParts.length > 0 ? queryParts.join(' ') : 'r:rare';
         const res = await scryfallClient.searchCards(`${q} -name:"${currentCard.name}" order:edhrec`);
         if (isMounted && res.data) {
-          setSynergies(res.data.slice(0, 15).map(mapScryfallCardToDomain));
+          const domainSynergies = res.data.slice(0, 15).map(mapScryfallCardToDomain);
+          synergiesCache.set(currentCard.id, domainSynergies);
+          setSynergies(domainSynergies);
         }
       } catch {
         if (isMounted) setSynergies([]);
@@ -64,20 +67,19 @@ export const SearchResultsDrawer: React.FC<SearchResultsDrawerProps> = ({
     };
   }, [currentCard]);
 
-  const displayedCards = activeTab === 'synergies' ? synergies : cards;
-  const hasItems = displayedCards.length > 0;
+  const hasItems = synergies.length > 0;
 
   return (
     <aside
       className={`grimoire-drawer-panel ${isCollapsed ? 'grimoire-drawer-collapsed' : ''}`}
-      aria-label="Sinergias y resultados"
+      aria-label="Sinergias recomendadas"
     >
       {/* Side-tab toggle attached strictly outside the panel */}
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
         className="grimoire-drawer-tab-toggle"
-        title={isCollapsed ? 'Desplegar panel de cartas' : 'Ocultar panel'}
+        title={isCollapsed ? 'Desplegar panel de sinergias' : 'Ocultar panel'}
         aria-expanded={!isCollapsed}
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -85,36 +87,16 @@ export const SearchResultsDrawer: React.FC<SearchResultsDrawerProps> = ({
 
       {!isCollapsed && (
         <div className="drawer-panel-inner">
-          {/* Header with Clean Tabs (Sinergias / Resultados) */}
-          <div className="drawer-nav-tabs">
-            <button
-              type="button"
-              onClick={() => setActiveTab('synergies')}
-              className={`drawer-tab-btn ${activeTab === 'synergies' ? 'drawer-tab-btn-active' : ''}`}
-            >
-              <Sparkles size={13} />
-              <span>Sinergias ({synergies.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('results')}
-              className={`drawer-tab-btn ${activeTab === 'results' ? 'drawer-tab-btn-active' : ''}`}
-            >
-              <Layers size={13} />
-              <span>Resultados ({totalCards || cards.length})</span>
-            </button>
+          {/* Header — Pure Sinergias (No Resultados tab) */}
+          <div className="drawer-header-clean" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span className="drawer-header-title">
+              Sinergias Recomendadas
+            </span>
+            <Sparkles size={14} color="var(--accent-gold)" />
           </div>
 
-          {/* Subtitle / Context info */}
-          {searchQueryDescription && activeTab === 'results' && (
-            <div className="drawer-search-context" title={searchQueryDescription}>
-              <span>{searchQueryDescription}</span>
-            </div>
-          )}
-
           {/* Loading State for Synergies */}
-          {activeTab === 'synergies' && isLoadingSynergies && (
+          {isLoadingSynergies && (
             <div className="drawer-loading-state">
               <span>Buscando sinergias para {currentCard.name}...</span>
             </div>
@@ -123,15 +105,15 @@ export const SearchResultsDrawer: React.FC<SearchResultsDrawerProps> = ({
           {/* Empty State */}
           {!hasItems && !isLoadingSynergies && (
             <div className="drawer-empty-state">
-              <Search size={22} color="var(--text-muted)" />
-              <p>Sin cartas disponibles en esta pestaña</p>
+              <Search size={22} color="#64748b" />
+              <p>Sin sinergias disponibles</p>
             </div>
           )}
 
-          {/* Cards List with Identical Design to MTG Codex */}
-          {hasItems && (
+          {/* Synergies List with Noble MTG Card Item Layout */}
+          {hasItems && !isLoadingSynergies && (
             <div className="drawer-cards-scroll">
-              {displayedCards.map((c) => {
+              {synergies.map((c) => {
                 const isSelected = currentCard.id === c.id;
                 const pricePen = formatPricePEN(c.prices.usd);
                 const imgUrl = c.imageUris.small || c.imageUris.normal;
@@ -183,5 +165,10 @@ export const SearchResultsDrawer: React.FC<SearchResultsDrawerProps> = ({
     </aside>
   );
 };
+
+export const SearchResultsDrawer = React.memo(
+  SearchResultsDrawerComponent,
+  (prev, next) => prev.currentCard?.id === next.currentCard?.id
+);
 
 export default SearchResultsDrawer;

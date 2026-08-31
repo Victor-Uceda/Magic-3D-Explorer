@@ -19,6 +19,14 @@ export interface ScryfallClientConfig {
   minRequestDelayMs?: number;
 }
 
+/**
+ * Cliente de conexión oficial con la API REST de Scryfall.
+ * 
+ * Gestiona:
+ * 1. Respeto al Rate Limiting oficial (80-100ms entre peticiones).
+ * 2. Timeout automático para evitar bloqueos de red.
+ * 3. Mapeo estructurado de errores HTTP (404, 429, 500).
+ */
 export class ScryfallClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
@@ -32,10 +40,10 @@ export class ScryfallClient {
   }
 
   /**
-   * Internal request helper ensuring required headers, rate limiting and explicit error handling
+   * Método auxiliar para realizar solicitudes HTTP con control de límites y cabeceras
    */
   private async request<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-    // Respect Scryfall Rate Limit policy (minimum spacing between requests)
+    // 1. Respetar intervalo mínimo entre peticiones (Políticas de Scryfall)
     const now = Date.now();
     const timeSinceLast = now - this.lastRequestTime;
     if (timeSinceLast < this.minRequestDelayMs) {
@@ -43,7 +51,7 @@ export class ScryfallClient {
     }
     this.lastRequestTime = Date.now();
 
-    // Construct URL
+    // 2. Construir URL con parámetros de búsqueda
     const url = new URL(`${this.baseUrl}${endpoint}`);
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -51,6 +59,7 @@ export class ScryfallClient {
       }
     });
 
+    // 3. Configurar timeout con AbortController
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -66,7 +75,7 @@ export class ScryfallClient {
 
       clearTimeout(timeoutId);
 
-      // Handle HTTP Error status codes
+      // 4. Manejo explícito de códigos de estado HTTP
       if (!response.ok) {
         if (response.status === 404) {
           const query = params.fuzzy || params.exact || params.q || endpoint;
@@ -88,7 +97,7 @@ export class ScryfallClient {
         }
 
         throw new ScryfallError(
-          `Scryfall API Error (${response.status}): ${errorDetails}`,
+          `Error de API Scryfall (${response.status}): ${errorDetails}`,
           response.status,
           errorDetails
         );
@@ -111,7 +120,7 @@ export class ScryfallClient {
   }
 
   /**
-   * Search cards by query string (e.g. "type:artifact c:u")
+   * Búsqueda general de cartas mediante sintaxis de Scryfall (ej: "t:creature c:blue")
    */
   public async searchCards(query: string, page = 1): Promise<ScryfallList<ScryfallCard>> {
     return this.request<ScryfallList<ScryfallCard>>('/cards/search', {
@@ -121,7 +130,7 @@ export class ScryfallClient {
   }
 
   /**
-   * Fetch next page using Scryfall's next_page URI
+   * Obtiene la siguiente página de resultados usando la URL provista por Scryfall
    */
   public async fetchNextPage(nextPageUrl: string): Promise<ScryfallList<ScryfallCard>> {
     const url = new URL(nextPageUrl);
@@ -134,7 +143,7 @@ export class ScryfallClient {
   }
 
   /**
-   * Fetch a single card by exact or fuzzy name
+   * Obtiene una carta por su nombre exacto o aproximado (fuzzy)
    */
   public async getCardNamed(name: string, exact = false): Promise<ScryfallCard> {
     const params: Record<string, string> = {};
@@ -147,14 +156,14 @@ export class ScryfallClient {
   }
 
   /**
-   * Fetch a single card by Scryfall UUID
+   * Obtiene una carta específica por su identificador UUID
    */
   public async getCardById(id: string): Promise<ScryfallCard> {
     return this.request<ScryfallCard>(`/cards/${id}`);
   }
 
   /**
-   * Autocomplete card names for live search suggestions
+   * Autocompletado de nombres en tiempo real para la barra de búsqueda
    */
   public async autocomplete(query: string): Promise<string[]> {
     if (!query || query.trim().length < 2) {
@@ -167,37 +176,47 @@ export class ScryfallClient {
   }
 
   /**
-   * Fetch all alternative printings/artworks for a card name
+   * Obtiene todas las versiones e ilustraciones históricas alternativas de una carta
    */
-  public async getCardPrints(name: string): Promise<ScryfallCard[]> {
-    const cleanName = name.split('//')[0].trim();
-    const query = `!"${cleanName.replace(/"/g, '')}" not:digital game:paper unique:prints`;
+  public async getCardPrints(name: string, printsUri?: string): Promise<ScryfallCard[]> {
+    if (printsUri) {
+      try {
+        const res = await this.fetchNextPage(printsUri);
+        if (res.data && res.data.length > 0) {
+          return res.data;
+        }
+      } catch {
+        // En caso de fallo en la URL directa, continúa con la búsqueda por nombre
+      }
+    }
+    const cleanName = name.split('//')[0].trim().replace(/"/g, '');
+    const query = `!"${cleanName}" unique:prints`;
     const res = await this.searchCards(query);
     return res.data || [];
   }
 
   /**
-   * Get a random card
+   * Obtiene una carta aleatoria
    */
   public async getRandomCard(): Promise<ScryfallCard> {
     return this.request<ScryfallCard>('/cards/random');
   }
 
   /**
-   * Get all available sets, filtered to booster-eligible types
+   * Lista todas las expansiones de Magic elegibles para sobres de apertura
    */
   public async getSets(): Promise<ScryfallSet[]> {
-    const BOOSTER_TYPES = new Set([
+    const TIPOS_SOBRES_VALIDOS = new Set([
       'expansion', 'masters', 'draft_innovation', 'core',
     ]);
     const res = await this.request<ScryfallList<ScryfallSet>>('/sets');
     return (res.data || []).filter(
-      (s) => BOOSTER_TYPES.has(s.set_type) && s.card_count > 0
+      (s) => TIPOS_SOBRES_VALIDOS.has(s.set_type) && s.card_count > 0
     );
   }
 
   /**
-   * Get cards from a specific set filtered by rarity
+   * Obtiene el listado de cartas de una expansión filtradas por rareza
    */
   public async getSetCards(
     setCode: string,
@@ -213,5 +232,5 @@ export class ScryfallClient {
   }
 }
 
-// Singleton export
+// Instancia singleton compartida en toda la aplicación
 export const scryfallClient = new ScryfallClient();

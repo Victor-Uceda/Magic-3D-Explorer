@@ -30,7 +30,7 @@ export const Scene: React.FC<SceneProps> = ({
   const backImageUrl = card?.backImageUri;
   const cardName = card?.name || 'Sol Ring';
 
-  // Dynamic Mana Aura calculated from card's mana colors
+  // Aura de maná dinámica calculada a partir de los colores de la carta
   const manaAuraColor = useMemo(
     () => getManaAuraColor(card?.colors || card?.colorIdentity),
     [card?.colors, card?.colorIdentity]
@@ -52,7 +52,7 @@ export const Scene: React.FC<SceneProps> = ({
       <Canvas
         shadows={false} // Rendimiento óptimo sin recálculos pesados de sombras
         dpr={[1, 1.5]} // Límite de DPR para fluidez total
-        camera={{ position: [0, 0.6, 5.4], fov: 44 }}
+        camera={{ position: [0, 0.5, 6.2], fov: 42 }}
         style={{
           width: '100%',
           height: '100%',
@@ -66,13 +66,13 @@ export const Scene: React.FC<SceneProps> = ({
         }}
       >
         <Suspense fallback={null}>
-          {/* Dynamic Scene Lighting */}
+          {/* Iluminación dinámica de la escena */}
           <Lighting manaAuraColor={manaAuraColor} />
 
-          {/* Ambient Ethereal Mana Particles */}
+          {/* Partículas ambientales de maná etéreo */}
           {enableParticles && <ManaParticles color={manaAuraColor} count={50} />}
 
-          {/* Clean 3D Card Model with Dynamic Finish (Normal / Foil / Etched) */}
+          {/* Modelo 3D de la carta con acabado interactivo (Normal / Foil / Etched) */}
           <Card3D
             frontImageUrl={frontImageUrl}
             backImageUrl={backImageUrl}
@@ -83,7 +83,7 @@ export const Scene: React.FC<SceneProps> = ({
             onCardClick={onToggleFlip}
           />
 
-          {/* Smooth Orbit Controls */}
+          {/* Controles de cámara orbitales suaves */}
           <CameraController
             autoRotate={autoRotate}
             resetTrigger={resetCameraTrigger}

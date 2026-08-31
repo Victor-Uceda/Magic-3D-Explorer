@@ -46,19 +46,19 @@ export const BoosterScene: React.FC<BoosterSceneProps> = ({
       <Canvas
         shadows={false}
         dpr={[1, 1.5]}
-        camera={{ position: [0, 0.1, 4.3], fov: 42 }}
+        camera={{ position: [0, 0.1, 5.2], fov: 42 }}
         style={{ width: '100%', height: '100%', background: 'transparent' }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
         <Suspense fallback={null}>
-          {/* Ambient & Directional Clean Studio Lighting */}
+          {/* Iluminación de estudio limpia (ambiental y direccional) */}
           <ambientLight intensity={1.3} color="#ffffff" />
           <directionalLight position={[0, 4, 6]} intensity={1.8} color="#ffffff" />
           <directionalLight position={[0, 4, -6]} intensity={1.5} color="#ffffff" />
           <directionalLight position={[-5, 2, 0]} intensity={0.7} color="#f8fafc" />
           <directionalLight position={[5, 2, 0]} intensity={0.7} color="#f8fafc" />
 
-          {/* Phase 1 & 2: 3D Foil Pack */}
+          {/* Fase 1 y 2: Paquete de sobre 3D con brillo foil */}
           {(phase === 'pack-ready' || phase === 'opening') && (
             <BoosterPack3D
               setName={setName}
@@ -69,7 +69,7 @@ export const BoosterScene: React.FC<BoosterSceneProps> = ({
             />
           )}
 
-          {/* Phase 3 & 4: Card Reveal */}
+          {/* Fase 3 y 4: Revelado interactivo de cartas 3D */}
           {(phase === 'revealing' || phase === 'finished') && currentBoosterCard && (
             <CardReveal3D
               key={`${currentBoosterCard.card.id}-${currentIndex}`}
@@ -81,6 +81,7 @@ export const BoosterScene: React.FC<BoosterSceneProps> = ({
             />
           )}
 
+          {/* Control orbital de cámara */}
           <CameraController minDistance={3.0} maxDistance={8.5} />
         </Suspense>
       </Canvas>

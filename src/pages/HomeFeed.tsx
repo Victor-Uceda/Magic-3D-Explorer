@@ -21,34 +21,29 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
 }) => {
   return (
     <div className="page-container home-feed-page">
-      {/* Editorial Header */}
-      <section className="home-editorial-header">
-        <h1 className="home-headline">
-          Explorador 3D de Cartas y Mazos de Magic
-        </h1>
+      {/* Clean, Focused Hero Section */}
+      <section className="home-hero-cinematic">
+        <div className="hero-content-wrapper">
+          <h1 className="hero-epic-title">
+            <span className="hero-title-sub">EXPLORADOR </span>
+            <span className="hero-title-main">MAGIC 3D</span>
+          </h1>
 
-        <p className="home-lead">
-          Consulta precios en soles en tiempo real desde Scryfall, explora el catálogo completo y examina cada carta en el visor 3D interactivo con acabados Normal, Foil y Etched.
-        </p>
+          <p className="hero-tagline">
+            Examina cartas legendarias en tres dimensiones con acabados Normal, Foil y Etched, cotizaciones en Soles y análisis de sinergias.
+          </p>
 
-        <div className="home-header-ctas">
-          <button
-            type="button"
-            onClick={() => onNavigate('catalog')}
-            className="btn-primary-action"
-          >
-            <Compass size={16} />
-            <span>Explorar Catálogo</span>
-            <ArrowRight size={16} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('decks')}
-            className="btn-secondary-action"
-          >
-            <span>Crear Mazo</span>
-          </button>
+          <div className="hero-actions-row">
+            <button
+              type="button"
+              onClick={() => onNavigate('catalog')}
+              className="hero-primary-cta"
+            >
+              <Compass size={16} />
+              <span>Explorar Catálogo 3D</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
       </section>
 
@@ -56,9 +51,9 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       <section className="home-gallery-section">
         <div className="section-header-clean">
           <div>
-            <h2 className="section-heading">Selección Destacada</h2>
+            <h2 className="section-heading">Selección de Cartas Legendarias</h2>
             <p className="section-subtext">
-              Selecciona cualquier carta para abrir su modelo interactivo en 3D y ficha técnica.
+              Haz clic en cualquier carta para entrar al estudio 3D interactivo.
             </p>
           </div>
 
@@ -67,7 +62,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             onClick={() => onNavigate('catalog')}
             className="text-link-action"
           >
-            <span>Ver todo el catálogo</span>
+            <span>Ver catálogo completo</span>
             <ArrowRight size={14} />
           </button>
         </div>
@@ -80,7 +75,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                 key={card.id}
                 className="catalog-card-item"
                 onClick={() => onSelectCard(card)}
-                title={`Abrir ${card.name} en 3D`}
+                title={`Examinar ${card.name} en 3D`}
               >
                 <div className="card-image-wrapper">
                   <img
@@ -108,6 +103,20 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
           })}
         </div>
       </section>
+
+      <section className="footer-section">
+        <div className="footer-content">
+          <p>Desarrollado por Victor Uceda</p>
+          <p>
+            @2026 Todos los derechos reservados para Wizards of the Coast.
+          </p>
+          <p>
+            Proyecto Personal sin fines de lucro.
+          </p>
+        </div>
+      </section>
     </div>
   );
 };
+
+export default HomeFeed;

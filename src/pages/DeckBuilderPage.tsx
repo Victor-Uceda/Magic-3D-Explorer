@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import {
-  Plus,
-  Layers,
-  Trash2,
-  Play,
-  Box,
-  Compass,
-} from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Compass, Share2, Box, Layers } from 'lucide-react';
+import { DeckSidebar } from '../components/deck/DeckSidebar';
+import { DeckStatsPanel } from '../components/deck/DeckStatsPanel';
+import { DeckCardList } from '../components/deck/DeckCardList';
+import { DeckCreateModal } from '../components/deck/DeckCreateModal';
+import { DeckExportModal } from '../components/deck/DeckExportModal';
+import { formatPricePEN } from '../utils/pricing';
 import type { Card } from '../types/card';
 import type { AppRoute } from '../types/navigation';
 
@@ -23,249 +22,244 @@ interface DeckBuilderPageProps {
   decks: DeckItem[];
   onCreateDeck: (name: string, format: string) => void;
   onDeleteDeck: (id: string) => void;
+  onUpdateCardQuantity: (deckId: string, cardId: string, delta: number) => void;
+  onRemoveCardFromDeck: (deckId: string, cardId: string) => void;
   onInspectCard: (card: Card) => void;
   onNavigate: (route: AppRoute) => void;
+  onInspectDeck3D?: (deckId: string) => void;
 }
+
+// Categorías canónicas de tipos de cartas MTG
+const CARD_TYPE_CATEGORIES = [
+  { key: 'creature', label: 'Criaturas', match: (t: string) => t.toLowerCase().includes('creature') },
+  { key: 'instant', label: 'Instantáneos', match: (t: string) => t.toLowerCase().includes('instant') },
+  { key: 'sorcery', label: 'Conjuros', match: (t: string) => t.toLowerCase().includes('sorcery') },
+  { key: 'artifact', label: 'Artefactos', match: (t: string) => t.toLowerCase().includes('artifact') && !t.toLowerCase().includes('creature') },
+  { key: 'enchantment', label: 'Encantamientos', match: (t: string) => t.toLowerCase().includes('enchantment') && !t.toLowerCase().includes('creature') },
+  { key: 'planeswalker', label: 'Planeswalkers', match: (t: string) => t.toLowerCase().includes('planeswalker') },
+  { key: 'land', label: 'Tierras', match: (t: string) => t.toLowerCase().includes('land') },
+  { key: 'other', label: 'Otros', match: () => true },
+];
 
 export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
   decks,
   onCreateDeck,
   onDeleteDeck,
+  onUpdateCardQuantity,
+  onRemoveCardFromDeck,
   onInspectCard,
   onNavigate,
+  onInspectDeck3D,
 }) => {
-  const [isCreating, setIsCreating] = useState(false);
-  const [deckName, setDeckName] = useState('');
-  const [deckFormat, setDeckFormat] = useState('commander');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [activeDeckId, setActiveDeckId] = useState<string | null>(decks[0]?.id || null);
 
-  const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0];
+  const activeDeck = useMemo(
+    () => decks.find((d) => d.id === activeDeckId) || decks[0] || null,
+    [decks, activeDeckId]
+  );
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!deckName.trim()) return;
-    onCreateDeck(deckName.trim(), deckFormat);
-    setDeckName('');
-    setIsCreating(false);
-  };
+  // Totales y valuación del mazo activo
+  const totalCardsCount = useMemo(() => {
+    if (!activeDeck) return 0;
+    return activeDeck.cards.reduce((sum, item) => sum + item.quantity, 0);
+  }, [activeDeck]);
 
-  const totalCardsInActiveDeck = activeDeck
-    ? activeDeck.cards.reduce((acc, item) => acc + item.quantity, 0)
-    : 0;
+  const targetFormatCount = useMemo(() => {
+    if (!activeDeck) return 60;
+    return activeDeck.format === 'commander' ? 100 : 60;
+  }, [activeDeck]);
+
+  const totalDeckValueUSD = useMemo(() => {
+    if (!activeDeck) return 0;
+    return activeDeck.cards.reduce((sum, item) => {
+      const price = item.card.prices.usd ? parseFloat(item.card.prices.usd) : 0;
+      return sum + price * item.quantity;
+    }, 0);
+  }, [activeDeck]);
+
+  const totalDeckValuePEN = formatPricePEN(totalDeckValueUSD.toFixed(2));
+
+  // Agrupación de cartas por tipo
+  const groupedCategories = useMemo(() => {
+    if (!activeDeck) return [];
+    const remaining = [...activeDeck.cards];
+    const groups: Array<{ key: string; label: string; items: typeof activeDeck.cards; count: number }> = [];
+
+    for (const cat of CARD_TYPE_CATEGORIES) {
+      if (cat.key === 'other') {
+        if (remaining.length > 0) {
+          const count = remaining.reduce((s, i) => s + i.quantity, 0);
+          groups.push({ key: cat.key, label: cat.label, items: [...remaining], count });
+        }
+        break;
+      }
+
+      const matched: typeof activeDeck.cards = [];
+      for (let i = remaining.length - 1; i >= 0; i--) {
+        if (cat.match(remaining[i].card.typeLine)) {
+          matched.unshift(remaining[i]);
+          remaining.splice(i, 1);
+        }
+      }
+
+      if (matched.length > 0) {
+        const count = matched.reduce((s, i) => s + i.quantity, 0);
+        groups.push({ key: cat.key, label: cat.label, items: matched, count });
+      }
+    }
+
+    return groups;
+  }, [activeDeck]);
 
   return (
     <div className="page-container deck-builder-page">
       {/* Header Bar */}
       <div className="deck-page-header">
         <div>
-          <h1 className="deck-page-title">Constructor de Mazos</h1>
+          <h1 className="deck-page-title">Constructor & Analizador de Mazos</h1>
           <p className="deck-page-subtitle">
-            Crea estrategias, organiza tus listas y visualiza su estructura.
+            Crea estrategias, evalúa tu curva de maná, visualiza tu mazo en 3D y gestiona tus listas.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => setIsCreating(true)}
+          onClick={() => setIsCreateModalOpen(true)}
           className="create-deck-btn"
+          title="Crear un nuevo mazo"
         >
           <Plus size={15} />
           <span>Nuevo Mazo</span>
         </button>
       </div>
 
-      {/* Creation Modal */}
-      {isCreating && (
-        <div className="modal-backdrop" onClick={() => setIsCreating(false)}>
-          <div className="deck-form-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Crear Nuevo Mazo</h3>
-            <form onSubmit={handleCreateSubmit}>
-              <div className="form-group">
-                <label htmlFor="deckNameInput">Nombre del Mazo</label>
-                <input
-                  id="deckNameInput"
-                  type="text"
-                  placeholder="ej. Control Azorius, Dragones..."
-                  value={deckName}
-                  onChange={(e) => setDeckName(e.target.value)}
-                  autoFocus
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="deckFormatSelect">Formato</label>
-                <select
-                  id="deckFormatSelect"
-                  value={deckFormat}
-                  onChange={(e) => setDeckFormat(e.target.value)}
-                >
-                  <option value="commander">Commander / EDH (100 cartas)</option>
-                  <option value="modern">Modern (60 cartas)</option>
-                  <option value="standard">Standard (60 cartas)</option>
-                  <option value="pioneer">Pioneer (60 cartas)</option>
-                  <option value="pauper">Pauper (60 cartas)</option>
-                  <option value="legacy">Legacy (60 cartas)</option>
-                </select>
-              </div>
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="btn-cancel"
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-submit">
-                  Guardar Mazo
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Main Grid */}
+      {/* Main Grid Layout */}
       <div className="deck-page-layout">
-        {/* Left: Decks List */}
-        <aside className="decks-sidebar">
-          <h3 className="decks-sidebar-title">
-            <Layers size={14} />
-            <span>Mis Mazos ({decks.length})</span>
-          </h3>
+        {/* Left: Decks Sidebar */}
+        <DeckSidebar
+          decks={decks}
+          activeDeckId={activeDeck?.id || null}
+          onSelectDeck={setActiveDeckId}
+          onDeleteDeck={onDeleteDeck}
+        />
 
-          <div className="decks-list">
-            {decks.map((deck) => {
-              const cardCount = deck.cards.reduce((sum, c) => sum + c.quantity, 0);
-              const isActive = deck.id === activeDeck?.id;
-              return (
-                <div
-                  key={deck.id}
-                  onClick={() => setActiveDeckId(deck.id)}
-                  className={`deck-sidebar-item ${isActive ? 'deck-sidebar-item-active' : ''}`}
-                >
-                  <div className="deck-item-top">
-                    <h4>{deck.name}</h4>
-                    <span className="deck-item-format">{deck.format.toUpperCase()}</span>
-                  </div>
-                  <div className="deck-item-bottom">
-                    <span>{cardCount} cartas</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteDeck(deck.id);
-                      }}
-                      className="deck-delete-btn"
-                      title="Eliminar mazo"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </aside>
-
-        {/* Right: Active Deck Details */}
+        {/* Right: Active Deck Workbench */}
         <main className="deck-main-panel">
           {activeDeck ? (
             <div className="active-deck-view">
+              {/* Active Deck Header */}
               <div className="active-deck-header">
                 <div>
                   <div className="deck-title-row">
                     <h2>{activeDeck.name}</h2>
                     <span className="deck-format-badge">{activeDeck.format.toUpperCase()}</span>
                   </div>
-                  <span className="deck-count-indicator">
-                    {totalCardsInActiveDeck} cartas en la lista
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: totalCardsCount >= targetFormatCount ? '#10b981' : '#f59e0b',
+                      }}
+                    >
+                      {totalCardsCount} / {targetFormatCount} cartas
+                    </span>
+                    <span style={{ color: '#64748b' }}>•</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--accent-gold)', fontFamily: 'var(--font-mono)' }}>
+                      Valor: {totalDeckValuePEN}
+                    </span>
+                    {totalDeckValueUSD > 0 && (
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                        (${totalDeckValueUSD.toFixed(2)} USD)
+                      </span>
+                    )}
+                  </div>
                 </div>
 
+                {/* Deck Action Buttons */}
                 <div className="deck-action-buttons">
                   <button
                     type="button"
                     onClick={() => onNavigate('catalog')}
                     className="deck-btn-secondary"
+                    title="Buscar cartas en el catálogo"
                   >
                     <Compass size={14} />
-                    <span>Explorar Cartas</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="deck-btn-primary"
-                    title="Visualizar este mazo en 3D"
-                    onClick={() => {
-                      if (activeDeck.cards.length > 0) {
-                        onInspectCard(activeDeck.cards[0].card);
-                      }
-                    }}
-                  >
-                    <Box size={14} />
-                    <span>Ver en 3D</span>
+                    <span>Agregar Cartas</span>
                   </button>
 
                   <button
                     type="button"
                     className="deck-btn-secondary"
-                    title="Simulador de mano"
+                    title="Exportar mazo a portapapeles o archivo"
+                    onClick={() => setIsExportModalOpen(true)}
                   >
-                    <Play size={14} />
-                    <span>Simular Mano</span>
+                    <Share2 size={14} />
+                    <span>Exportar</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="deck-btn-primary"
+                    title="Visualizar este mazo específico en 3D"
+                    onClick={() => {
+                      if (onInspectDeck3D) {
+                        onInspectDeck3D(activeDeck.id);
+                      } else {
+                        onNavigate('deck-3d');
+                      }
+                    }}
+                    disabled={activeDeck.cards.length === 0}
+                  >
+                    <Box size={14} />
+                    <span>Ver Mazo en 3D</span>
                   </button>
                 </div>
               </div>
 
-              {/* Cards in Deck Grid */}
-              {activeDeck.cards.length === 0 ? (
-                <div className="deck-empty-state">
-                  <Layers size={36} color="var(--text-muted)" />
-                  <h3>El mazo no tiene cartas</h3>
-                  <p>Explora el catálogo y agrega cartas para empezar a armar tu lista.</p>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate('catalog')}
-                    className="btn-primary-action"
-                  >
-                    <Compass size={14} />
-                    <span>Ir al Catálogo</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="deck-cards-list-grid">
-                  {activeDeck.cards.map((entry) => (
-                    <div
-                      key={entry.card.id}
-                      className="deck-card-chip"
-                      onClick={() => onInspectCard(entry.card)}
-                    >
-                      <img
-                        src={entry.card.imageUris.small || entry.card.imageUris.normal}
-                        alt={entry.card.name}
-                        className="deck-card-thumb"
-                      />
-                      <div className="deck-card-info">
-                        <span className="deck-card-qty">{entry.quantity}x</span>
-                        <span className="deck-card-title">{entry.card.name}</span>
-                      </div>
-                      <span className="deck-card-type">{entry.card.typeLine.split('—')[0]}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Mana Curve & Deck Analytics */}
+              <DeckStatsPanel deck={activeDeck} groupedCategories={groupedCategories} />
+
+              {/* Cards List Grouped by Type */}
+              <DeckCardList
+                deckId={activeDeck.id}
+                groupedCategories={groupedCategories}
+                totalCardsCount={totalCardsCount}
+                onInspectCard={onInspectCard}
+                onUpdateQuantity={onUpdateCardQuantity}
+                onRemoveCard={onRemoveCardFromDeck}
+                onNavigateToCatalog={() => onNavigate('catalog')}
+              />
             </div>
           ) : (
             <div className="deck-empty-state">
               <Layers size={36} color="var(--text-muted)" />
-              <h3>Ningún mazo seleccionado</h3>
-              <p>Crea un mazo para empezar.</p>
+              <h3>Ningún mazo disponible</h3>
+              <p>Crea tu primer mazo para empezar.</p>
             </div>
           )}
         </main>
       </div>
+
+      {/* Creation Modal */}
+      <DeckCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateDeck={onCreateDeck}
+      />
+
+      {/* Export Modal */}
+      {activeDeck && (
+        <DeckExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          deck={activeDeck}
+        />
+      )}
     </div>
   );
 };
+
+export default DeckBuilderPage;

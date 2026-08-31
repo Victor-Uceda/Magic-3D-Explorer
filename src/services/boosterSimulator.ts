@@ -1,11 +1,29 @@
 /**
- * Booster Pack Simulator
- * Generates a simulated Draft Booster from a given MTG set using Scryfall data.
- * Standard distribution: 10 Commons, 3 Uncommons, 1 Rare/Mythic, 1 Bonus/Foil slot
+ * Simulador de Sobres de Draft (Booster Pack Simulator)
+ * 
+ * Distribución estándar oficial MTG:
+ * - 10 Comunes
+ * - 3 Infrecuentes
+ * - 1 Rara o Mítica (probabilidad de mítica ~1 en 7.4)
+ * - 1 Carta Bonus / Foil
  */
 
 import { scryfallClient, mapScryfallCardToDomain } from './scryfall';
+import { USD_TO_PEN_RATE } from '../utils/pricing';
 import type { Card } from '../types/card';
+
+export const BOOSTER_CONFIG = {
+  COMMONS_COUNT: 10,
+  UNCOMMONS_COUNT: 3,
+  MYTHIC_RATE: 1 / 7.4,
+  TOTAL_CARDS: 15,
+} as const;
+
+export interface BoosterCard {
+  card: Card;
+  rarity: 'common' | 'uncommon' | 'rare' | 'mythic';
+  isRareSlot: boolean;
+}
 
 export interface BoosterPack {
   setCode: string;
@@ -15,13 +33,7 @@ export interface BoosterPack {
   totalValuePen: number;
 }
 
-export interface BoosterCard {
-  card: Card;
-  rarity: 'common' | 'uncommon' | 'rare' | 'mythic';
-  isRareSlot: boolean;
-}
-
-// In-memory cache to avoid redundant API calls for the same set
+// Caché en memoria para evitar peticiones repetitivas del mismo set
 const cardPoolCache = new Map<string, {
   commons: Card[];
   uncommons: Card[];
@@ -30,6 +42,9 @@ const cardPoolCache = new Map<string, {
   all: Card[];
 }>();
 
+/**
+ * Selecciona N elementos aleatorios sin repetición de un arreglo
+ */
 function pickRandom<T>(arr: T[], count: number): T[] {
   if (!arr || arr.length === 0) return [];
   const shuffled = [...arr].sort(() => Math.random() - 0.5);
@@ -37,13 +52,26 @@ function pickRandom<T>(arr: T[], count: number): T[] {
 }
 
 /**
- * Fetch and cache the card pools for a set (all rarities)
+ * Valida y normaliza la rareza de una carta
+ */
+function normalizeBoosterRarity(
+  rarity: string | undefined,
+  fallback: 'common' | 'uncommon' | 'rare' | 'mythic'
+): 'common' | 'uncommon' | 'rare' | 'mythic' {
+  if (rarity === 'common' || rarity === 'uncommon' || rarity === 'rare' || rarity === 'mythic') {
+    return rarity;
+  }
+  return fallback;
+}
+
+/**
+ * Obtiene y cachea los pools de cartas de una colección divididos por rareza
  */
 async function getCardPools(setCode: string) {
   const cached = cardPoolCache.get(setCode);
   if (cached) return cached;
 
-  // Fetch all four rarity pools in parallel
+  // Consultar en paralelo los 4 grupos de rareza
   const [rawCommons, rawUncommons, rawRares, rawMythics] = await Promise.all([
     scryfallClient.getSetCards(setCode, 'common'),
     scryfallClient.getSetCards(setCode, 'uncommon'),
@@ -56,7 +84,7 @@ async function getCardPools(setCode: string) {
   let rares = rawRares.map(mapScryfallCardToDomain);
   let mythics = rawMythics.map(mapScryfallCardToDomain);
 
-  // If any pool is empty, fetch all cards from set as fallback
+  // Si algún pool viene vacío, obtener la colección completa como respaldo
   let all: Card[] = [...commons, ...uncommons, ...rares, ...mythics];
   if (all.length === 0) {
     try {
@@ -67,7 +95,7 @@ async function getCardPools(setCode: string) {
       rares = all.filter((c) => c.rarity === 'rare');
       mythics = all.filter((c) => c.rarity === 'mythic');
     } catch {
-      // Ignore
+      // Ignorar error de respaldo
     }
   }
 
@@ -77,7 +105,7 @@ async function getCardPools(setCode: string) {
 }
 
 /**
- * Generate a simulated Draft Booster pack for a given set
+ * Genera un sobre simulado completo de 15 cartas para una colección dada
  */
 export async function generateBoosterPack(
   setCode: string,
@@ -88,35 +116,25 @@ export async function generateBoosterPack(
 
   const boosterCards: BoosterCard[] = [];
 
-  // 1. 10 Commons (or fill from fallback pool)
+  // 1. 10 Cartas Comunes
   const commonPool = pools.commons.length > 0 ? pools.commons : fallbackPool;
-  const commons = pickRandom(commonPool, 10);
+  const commons = pickRandom(commonPool, BOOSTER_CONFIG.COMMONS_COUNT);
   for (const c of commons) {
     boosterCards.push({ card: c, rarity: 'common', isRareSlot: false });
   }
 
-  // 2. 3 Uncommons (or fill from fallback pool)
+  // 2. 3 Cartas Infrecuentes
   const uncommonPool = pools.uncommons.length > 0 ? pools.uncommons : fallbackPool;
-  const uncommons = pickRandom(uncommonPool, 3);
+  const uncommons = pickRandom(uncommonPool, BOOSTER_CONFIG.UNCOMMONS_COUNT);
   for (const u of uncommons) {
     boosterCards.push({ card: u, rarity: 'uncommon', isRareSlot: false });
   }
 
-  // 3. 1 Rare or Mythic (approximately 1 in 7.4 chance of mythic)
-  const isMythic = Math.random() < (1 / 7.4);
+  // 3. 1 Carta Rara o Mítica (probabilidad de mítica ~1 en 7.4)
+  const isMythic = Math.random() < BOOSTER_CONFIG.MYTHIC_RATE;
   const rarePool = isMythic && pools.mythics.length > 0
     ? pools.mythics
     : (pools.rares.length > 0 ? pools.rares : fallbackPool);
-  
-function normalizeBoosterRarity(
-  rarity: string | undefined,
-  fallback: 'common' | 'uncommon' | 'rare' | 'mythic'
-): 'common' | 'uncommon' | 'rare' | 'mythic' {
-  if (rarity === 'common' || rarity === 'uncommon' || rarity === 'rare' || rarity === 'mythic') {
-    return rarity;
-  }
-  return fallback;
-}
 
   const rareCard = pickRandom(rarePool, 1)[0];
   if (rareCard) {
@@ -127,7 +145,7 @@ function normalizeBoosterRarity(
     });
   }
 
-  // 4. 1 Extra / Foil bonus slot
+  // 4. 1 Carta Bonus / Foil adicional
   const bonusPool = pools.all.length > 0 ? pools.all : fallbackPool;
   const bonus = pickRandom(bonusPool, 1)[0];
   if (bonus) {
@@ -138,8 +156,8 @@ function normalizeBoosterRarity(
     });
   }
 
-  // If still less than 15, top up from fallback
-  while (boosterCards.length < 15 && fallbackPool.length > 0) {
+  // Completar hasta el total de cartas si hiciera falta
+  while (boosterCards.length < BOOSTER_CONFIG.TOTAL_CARDS && fallbackPool.length > 0) {
     const extra = pickRandom(fallbackPool, 1)[0];
     if (!extra) break;
     boosterCards.push({
@@ -149,7 +167,7 @@ function normalizeBoosterRarity(
     });
   }
 
-  // Calculate total value
+  // Calcular valor económico total del sobre
   let totalUsd = 0;
   for (const bc of boosterCards) {
     const usd = bc.card?.prices?.usd ? parseFloat(bc.card.prices.usd) : 0;
@@ -161,12 +179,12 @@ function normalizeBoosterRarity(
     setName,
     cards: boosterCards,
     totalValueUsd: Math.round(totalUsd * 100) / 100,
-    totalValuePen: Math.round(totalUsd * 3.75 * 100) / 100,
+    totalValuePen: Math.round(totalUsd * USD_TO_PEN_RATE * 100) / 100,
   };
 }
 
 /**
- * Clear cached card pools (e.g., on set change)
+ * Limpia la memoria caché de colecciones
  */
 export function clearBoosterCache() {
   cardPoolCache.clear();

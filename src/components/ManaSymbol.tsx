@@ -61,7 +61,7 @@ export const ManaSymbol: React.FC<ManaSymbolProps> = ({ symbol, size = 18, enabl
       case 'R':
         return { backgroundColor: '#fecaca', color: '#991b1b', border: '1px solid #ef4444' };
       case 'G':
-        return { backgroundColor: '#bbf7d0', color: '#14532d', border: '1px solid #22c55e' };
+        return { backgroundColor: '#bbf7d0', color: '#14532d', border: '1px solid #16a34a' };
       case 'T':
       case 'TAP':
         return { backgroundColor: '#1e293b', color: '#e2e8f0', border: '1px solid #64748b' };

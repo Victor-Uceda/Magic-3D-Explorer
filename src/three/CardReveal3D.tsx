@@ -3,11 +3,12 @@ import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Card } from '../types/card';
 
-// Official high-res Magic: The Gathering Card Back URL
+// URL oficial del reverso clásico de cartas Magic: The Gathering en alta resolución
 const OFFICIAL_MTG_CARD_BACK_URL = 'https://backs.scryfall.io/large/5/9/597b79b3-7d77-4261-871a-60dd17403388.jpg';
 
 const textureCache = new Map<string, THREE.Texture>();
 
+// Carga y obtención de la textura de reverso de la carta
 function getCardBackTexture(): THREE.Texture {
   if (textureCache.has('__mtg_official_back__')) {
     return textureCache.get('__mtg_official_back__')!;
@@ -29,6 +30,7 @@ function getCardBackTexture(): THREE.Texture {
   return texture;
 }
 
+// Generador procedural de respaldo para el anverso de la carta
 function getFallbackFrontTexture(name: string): THREE.Texture {
   const cacheKey = `__fallback_${name}__`;
   if (textureCache.has(cacheKey)) {
@@ -52,7 +54,7 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
 
     ctx.fillStyle = '#16181d';
     ctx.fillRect(32, 32, 448, 44);
-    ctx.strokeStyle = '#d4af37';
+    ctx.strokeStyle = '#b8964e';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(32, 32, 448, 44);
 
@@ -68,7 +70,7 @@ function getFallbackFrontTexture(name: string): THREE.Texture {
   return texture;
 }
 
-// Creates authentic MTG card shape with smooth rounded corners
+// Crea la forma geométrica auténtica de carta MTG con esquinas redondeadas
 function createRoundedCardShape(w: number, h: number, r: number): THREE.Shape {
   const shape = new THREE.Shape();
   const x = -w / 2;
@@ -87,7 +89,7 @@ function createRoundedCardShape(w: number, h: number, r: number): THREE.Shape {
   return shape;
 }
 
-// Generates UV coordinates for front or back rounded face without distortion
+// Genera coordenadas UV mapeadas para las caras frontal o posterior sin distorsión
 function createCardFaceGeometry(w: number, h: number, r: number): THREE.BufferGeometry {
   const shape = createRoundedCardShape(w, h, r);
   const geom = new THREE.ShapeGeometry(shape, 32);
@@ -109,7 +111,7 @@ function createCardFaceGeometry(w: number, h: number, r: number): THREE.BufferGe
   return geom;
 }
 
-// Generates black cardstock core edge geometry with rounded corners
+// Genera la geometría del núcleo y borde de cartulina negra con esquinas redondeadas
 function createCardCoreGeometry(w: number, h: number, r: number, depth: number): THREE.BufferGeometry {
   const shape = createRoundedCardShape(w, h, r);
   const geom = new THREE.ExtrudeGeometry(shape, {
@@ -142,7 +144,7 @@ export const CardReveal3D: React.FC<CardReveal3DProps> = ({
   const frontImageUrl = card.imageUris?.normal || card.imageUris?.large || card.imageUris?.small;
   const cardName = card.name || 'Carta';
 
-  // Front Texture with safe caching and fallback
+  // Textura frontal con caché seguro y generador de respaldo
   const [frontTexture, setFrontTexture] = useState<THREE.Texture>(() => {
     if (frontImageUrl && textureCache.has(frontImageUrl)) {
       return textureCache.get(frontImageUrl)!;
@@ -182,7 +184,7 @@ export const CardReveal3D: React.FC<CardReveal3DProps> = ({
     );
   }, [frontImageUrl, cardName]);
 
-  // Card dimensions (standard MTG 63 x 88 mm aspect ratio)
+  // Dimensiones de carta MTG estándar (relación de aspecto 63 x 88 mm)
   const width = 2.15;
   const height = 3.0;
   const radius = 0.09;
@@ -197,17 +199,17 @@ export const CardReveal3D: React.FC<CardReveal3DProps> = ({
   useFrame(() => {
     if (!groupRef.current) return;
 
-    // Face down is Math.PI, revealed is 0
+    // Boca abajo es Math.PI, revelada es 0
     const targetRotY = isRevealed ? 0 : Math.PI;
     groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotY, 0.18);
 
-    // Floating breathing motion
+    // Movimiento suave de flotación
     const t = Date.now() * 0.002;
     const hoverLift = hovered ? 0.08 : 0;
     const floatY = Math.sin(t + index * 0.5) * 0.04 + hoverLift;
     groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, floatY, 0.12);
 
-    // Slight tilt to catch light
+    // Inclinación ligera para captar la iluminación
     const tiltX = Math.cos(t * 0.8) * 0.03;
     groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, tiltX, 0.1);
   });
@@ -246,7 +248,7 @@ export const CardReveal3D: React.FC<CardReveal3DProps> = ({
         document.body.style.cursor = 'auto';
       }}
     >
-      {/* Front Face (Illustrated card with clean natural physical lighting) */}
+      {/* Cara frontal (Carta ilustrada con iluminación física natural) */}
       <mesh geometry={frontGeom} position={[0, 0, depth / 2 + 0.001]}>
         <meshPhysicalMaterial
           map={frontTexture}
@@ -258,12 +260,12 @@ export const CardReveal3D: React.FC<CardReveal3DProps> = ({
         />
       </mesh>
 
-      {/* Back Face (Standard MTG card back) */}
+      {/* Cara posterior (Reverso estándar de carta Magic) */}
       <mesh geometry={backGeom} position={[0, 0, -depth / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
         <meshStandardMaterial map={backTexture} roughness={0.32} metalness={0.0} />
       </mesh>
 
-      {/* Card Core Edge (Dark cardstock layer) */}
+      {/* Núcleo del borde de la carta (Capa de cartulina oscura) */}
       <mesh geometry={coreGeom}>
         <meshStandardMaterial color="#111317" roughness={0.8} metalness={0.0} />
       </mesh>

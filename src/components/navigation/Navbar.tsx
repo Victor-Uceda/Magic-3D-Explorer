@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
-  SlidersHorizontal,
   Dices,
   PackageOpen,
-  Castle,
   BookOpen,
   Swords,
-  Crown,
+  Heart,
   X,
   ExternalLink,
   Loader2,
@@ -22,8 +20,8 @@ interface NavbarProps {
   onSearchChange: (query: string) => void;
   onSearchSubmit: (query: string) => void;
   onRandomCard: () => void;
-  onOpenFilters: () => void;
-  activeFilterCount: number;
+  onOpenFilters?: () => void;
+  activeFilterCount?: number;
   isLoading?: boolean;
 }
 
@@ -34,8 +32,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onSearchSubmit,
   onRandomCard,
-  onOpenFilters,
-  activeFilterCount,
   isLoading = false,
 }) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -97,6 +93,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     setShowSuggestions(false);
     if (searchQuery.trim()) {
       onSearchSubmit(searchQuery.trim());
+      if (currentRoute !== 'catalog') {
+        onRouteChange('catalog');
+      }
     }
   };
 
@@ -104,12 +103,15 @@ export const Navbar: React.FC<NavbarProps> = ({
     onSearchChange(name);
     setShowSuggestions(false);
     onSearchSubmit(name);
+    if (currentRoute !== 'catalog') {
+      onRouteChange('catalog');
+    }
   };
 
   return (
-    <header className="app-navbar" role="banner">
+    <header className="app-navbar-single" role="banner">
       <div className="app-navbar-inner">
-        {/* Brand Logo - Medieval Typography (No M3D icon) */}
+        {/* Left: Brand Logo */}
         <button
           type="button"
           onClick={() => onRouteChange('home')}
@@ -122,61 +124,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </button>
 
-        {/* Primary Navigation Tabs with Distinct Medieval Icons */}
-        <nav className="app-navbar-nav" aria-label="Navegación principal">
-          <button
-            type="button"
-            onClick={() => onRouteChange('home')}
-            className={`nav-link ${currentRoute === 'home' ? 'nav-link-active' : ''}`}
-            title="Inicio"
-          >
-            <Castle size={16} className="nav-tab-icon" />
-            <span>Inicio</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onRouteChange('catalog')}
-            className={`nav-link ${currentRoute === 'catalog' ? 'nav-link-active' : ''}`}
-            title="Catálogo de Cartas"
-          >
-            <BookOpen size={16} className="nav-tab-icon" />
-            <span>Catálogo</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onRouteChange('decks')}
-            className={`nav-link ${currentRoute === 'decks' ? 'nav-link-active' : ''}`}
-            title="Mazos de Batalla"
-          >
-            <Swords size={16} className="nav-tab-icon" />
-            <span>Mazos</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onRouteChange('collection')}
-            className={`nav-link ${currentRoute === 'collection' ? 'nav-link-active' : ''}`}
-            title="Colección y Favoritos"
-          >
-            <Crown size={16} className="nav-tab-icon" />
-            <span>Colección</span>
-          </button>
-        </nav>
-
-        {/* Global Search Bar */}
-        <div ref={searchContainerRef} className="app-navbar-search">
+        {/* Center: Sleek Centered Capsule Search Bar */}
+        <div ref={searchContainerRef} className="app-navbar-search centered-search-pill">
           <form onSubmit={handleSubmit} className="search-form">
             {isLoading ? (
-              <Loader2 size={14} className="spin search-icon" color="var(--accent-gold)" />
+              <Loader2 size={14} className="spin search-icon" color="#94a3b8" />
             ) : (
-              <Search size={14} className="search-icon" color="var(--text-muted)" />
+              <Search size={14} className="search-icon" color="#64748b" />
             )}
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Buscar por nombre (ej. Black Lotus, Lightning Bolt)..."
+              placeholder="Buscar cartas, comandantes, artefactos..."
               value={searchQuery}
               onChange={(e) => {
                 onSearchChange(e.target.value);
@@ -212,24 +171,53 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="suggestion-item"
                 >
                   <span>{name}</span>
-                  <ExternalLink size={11} color="var(--text-muted)" />
+                  <ExternalLink size={11} color="#64748b" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Actions Toolbar */}
+        {/* Right: Clean, Minimal Navigation Actions */}
         <div className="app-navbar-actions">
           <button
             type="button"
-            onClick={onOpenFilters}
-            className={`nav-action-btn ${activeFilterCount > 0 ? 'nav-action-btn-active' : ''}`}
-            title="Filtros avanzados de búsqueda"
+            onClick={() => onRouteChange('catalog')}
+            className={`nav-action-btn ${currentRoute === 'catalog' ? 'nav-action-btn-active' : ''}`}
+            title="Catálogo completo de cartas"
           >
-            <SlidersHorizontal size={14} />
-            <span className="btn-label">Filtros</span>
-            {activeFilterCount > 0 && <span className="filter-count-badge">{activeFilterCount}</span>}
+            <BookOpen size={14} />
+            <span className="btn-label">Catálogo</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onRouteChange('decks')}
+            className={`nav-action-btn ${currentRoute === 'decks' ? 'nav-action-btn-active' : ''}`}
+            title="Constructor de Mazos"
+          >
+            <Swords size={14} />
+            <span className="btn-label">Mazos</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onRouteChange('booster')}
+            className={`nav-action-btn ${currentRoute === 'booster' ? 'nav-action-btn-active' : ''}`}
+            title="Simulador de Sobres 3D"
+          >
+            <PackageOpen size={14} />
+            <span className="btn-label">Sobres 3D</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onRouteChange('collection')}
+            className={`nav-action-btn ${currentRoute === 'collection' ? 'nav-action-btn-active' : ''}`}
+            title="Mi Colección de Cartas Favoritas"
+          >
+            <Heart size={14} />
+            <span className="btn-label">Colección</span>
           </button>
 
           <button
@@ -240,16 +228,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Descubrir carta aleatoria en 3D"
           >
             <Dices size={15} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onRouteChange('booster')}
-            className={`nav-action-btn booster-btn ${currentRoute === 'booster' ? 'booster-btn-active' : ''}`}
-            title="Simulador de Sobres de Cartas"
-          >
-            <PackageOpen size={14} />
-            <span className="btn-label">Sobres</span>
           </button>
         </div>
       </div>

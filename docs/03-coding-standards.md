@@ -1,387 +1,75 @@
 # Coding Standards
 
-## 1. Objetivo
-
-Todo el código debe ser:
-
-* legible;
-* mantenible;
-* testeable;
-* predecible;
-* seguro;
-* sencillo.
-
-El código debe poder ser entendido por otro desarrollador sin depender del contexto del autor.
+> [!CAUTION]
+> **REGLA ESTRICTA DE DISEÑO Y COLOR (3X):**
+> 1. NO QUIERO COLORES NEON
+> 2. NO QUIERO COLORES NEON
+> 3. NO QUIERO COLORES NEON
+>
+> Prohibidos terminantemente los amarillos brillantes, verdes fluorescentes, cianes intensos o botones amarillos chillones. Toda la paleta debe ser sobria, oscura y elegante (grafito, pizarra, humo y acentos en oro/bronce mate tenue `#c5a059`).
 
 ---
 
-## 2. KISS
-
-Utilizar la solución más sencilla que resuelva correctamente el problema.
-
-No introducir:
-
-* abstracciones innecesarias;
-* frameworks adicionales;
-* patrones innecesarios;
-* capas artificiales.
+## 1. Principios Fundamentales
+* **Simplicidad y claridad para exposición**: El código debe ser autoexplicativo, legible y fácil de defender en una presentación técnica.
+* **KISS (Keep It Simple, Stupid)**: Priorizar siempre la solución más directa y limpia sin introducir capas artificiales o sobreingeniería.
+* **DRY (Don't Repeat Yourself) moderado**: Reutilizar lógica cuando represente una responsabilidad compartida real, sin forzar abstracciones prematuras.
+* **Comentarios en español**: Todo comentario explicativo y documentación JSDoc debe redactarse en español claro y conciso.
 
 ---
 
-## 3. DRY
-
-Evitar duplicación de lógica.
-
-Pero no aplicar DRY de forma excesiva.
-
-No crear una abstracción solamente porque dos funciones tienen unas líneas similares.
-
-La abstracción debe representar una responsabilidad real.
-
----
-
-## 4. SOLID
-
-Aplicar SOLID cuando aporte valor.
-
-Especialmente:
-
-### Single Responsibility
-
-Una clase, función o módulo debe tener una responsabilidad clara.
-
-### Open/Closed
-
-Facilitar extensión cuando exista una necesidad real.
-
-### Dependency Inversion
-
-Separar lógica de negocio de implementaciones externas cuando sea beneficioso.
+## 2. Estándares de TypeScript y React
+* **Tipado Estricto**:
+  * Prohibido el uso de `any`.
+  * Definir interfaces explícitas para props de componentes (`interface ComponentProps { ... }`).
+  * Tipar retornos de funciones asíncronas y transformaciones de datos.
+* **Modularidad y Custom Hooks**:
+  * Desacoplar estado y efectos de los componentes hacia hooks reutilizables (`useCardSearch`, `useCardFilters`, `useFavorites`, `useDecks`, `useStudio3D`).
+  * Evitar "God Components": Mantener los componentes por debajo de **~250-350 líneas de código**.
+  * Si un componente gestiona múltiples responsabilidades (cabecera, controles, modales), desacoplarlo en submódulos atómicos dedicados.
+* **Gestión de Efectos y Ciclo de Vida**:
+  * Limpiar siempre timers, listeners (`removeEventListener`), debounce timeouts y controladores de abort (`AbortController`) en la función de retorno de `useEffect`.
+  * Evitar dependencias cíclicas o estados redundantes que puedan provocar re-renders innecesarios.
+* **Resiliencia con Error Boundaries**:
+  * Envolver vistas y árboles propensos a excepciones (WebGL, Three.js, red) con `ErrorBoundary` para evitar caídas de la aplicación completa.
 
 ---
 
-## 5. Funciones
-
-Las funciones deben:
-
-* ser pequeñas;
-* tener una responsabilidad;
-* tener nombres descriptivos;
-* evitar efectos secundarios innecesarios.
-
-Evitar funciones que hagan simultáneamente:
-
-* HTTP;
-* validación;
-* base de datos;
-* lógica de negocio;
-* transformación;
-* respuesta.
-
-Separar responsabilidades.
+## 3. Arquitectura de Red y Servicios (Scryfall API)
+* **Rate Limiting**: Respetar el intervalo mínimo de 80-100ms entre solicitudes consecutivas a la API pública de Scryfall (`SCRYFALL_CONFIG.MIN_REQUEST_DELAY_MS`).
+* **Manejo de Errores Tipado**: Manejar explícitamente códigos de estado HTTP (404 Not Found, 429 Rate Limit Exceeded, 500 Internal Error) mediante clases de error personalizadas (`ScryfallError`).
+* **Mapeo Seguro de Dominio**: Aislar la respuesta cruda de la API (`ScryfallCard`) del modelo interno de la aplicación (`Card`), resolviendo de forma segura cartas de doble cara (DFC) y URLs de imágenes.
 
 ---
 
-## 6. Nombres
-
-Utilizar nombres descriptivos.
-
-Preferir:
-
-```typescript
-getCardByName()
-saveFavoriteCard()
-mapScryfallCard()
-calculatePriceChange()
-```
-
-Evitar:
-
-```typescript
-getData()
-process()
-handle()
-doStuff()
-```
+## 4. Persistencia y Patrón Repository
+* **Desacoplamiento de Almacenamiento**:
+  * Utilizar la interfaz `ICardStorageRepository` para operaciones CRUD de favoritos y mazos.
+  * La persistencia no debe estar acoplada directamente a `localStorage` dentro de los componentes visuales; siempre debe pasar a través del repositorio o los hooks `useFavorites` / `useDecks`.
+  * Manejo seguro de errores ante cuotas de almacenamiento superadas o entornos sin acceso a `Storage`.
 
 ---
 
-## 7. TypeScript
-
-Utilizar TypeScript estricto.
-
-Evitar `any`.
-
-No utilizar `any` simplemente para solucionar rápidamente un error.
-
-Preferir:
-
-* interfaces;
-* types;
-* unions;
-* generics;
-* type guards;
-* tipos específicos.
+## 5. Rendimiento en Renderizado 3D (Three.js & R3F)
+* **Caché de Texturas**: Almacenar texturas cargadas en un `Map<string, THREE.Texture>` global para evitar pausas por recolección de basura (*Garbage Collection*).
+* **Geometrías Reutilizables**: Instanciar y memorizar geometrías complejas con `useMemo` en lugar de recrearlas en cada frame.
+* **Optimizaciones de GPU**: Mantener 60 FPS estables desactivando sombras pesadas cuando no aporten valor (`shadows={false}`) y fijando el límite de DPR (`dpr={[1, 1.5]}`).
 
 ---
 
-## 8. Interfaces
-
-Crear interfaces para representar contratos importantes.
-
-Ejemplo:
-
-```typescript
-interface Card {
-  id: string;
-  name: string;
-  manaCost: string;
-  typeLine: string;
-  oracleText: string;
-}
-```
+## 6. Nomenclatura y Reglas de Negocio
+* **Nombres Descriptivos**:
+  * Funciones: Verbo + Sustantivo (ej. `generateBoosterPack`, `mapScryfallCardToDomain`, `formatPricePEN`).
+  * Custom Hooks: Prefijo `use` + Sustantivo/Acción (ej. `useCardSearch`, `useStudio3D`).
+  * Componentes: PascalCase descriptivo (ej. `BoosterControls`, `CardInfoPanel`).
+  * Constantes globales: SCREAMING_SNAKE_CASE (ej. `USD_TO_PEN_RATE`, `CARD_DIMENSIONS`).
+* **Cero Magic Numbers**: Prohibido insertar constantes numéricas sueltas sin contexto en el código. Centralizar en `src/constants/`.
+* **Precios en Moneda Local**: Todos los precios deben cotizarse y presentarse en Soles peruanos (`S/.`) mediante el formateador centralizado `formatPricePEN()`.
 
 ---
 
-## 9. Errores
-
-Los errores deben ser explícitos.
-
-No utilizar:
-
-```typescript
-catch {
-}
-```
-
-sin una razón válida.
-
-Crear errores controlados cuando sea necesario:
-
+## 7. Verificación Continua
 ```text
-ValidationError
-NotFoundError
-ExternalApiError
-UnauthorizedError
-DatabaseError
+npm run lint   → 0 errores, 0 warnings (Obligatorio)
+npm run build  → Compilación limpia TypeScript/Vite (Obligatorio)
 ```
-
-No enviar stack traces al frontend.
-
----
-
-## 10. Validación
-
-Tratar toda entrada externa como no confiable.
-
-Validar:
-
-* inputs;
-* parámetros;
-* respuestas de APIs;
-* datos de Firestore;
-* información de autenticación.
-
----
-
-## 11. Seguridad
-
-Nunca:
-
-* almacenar secretos en Git;
-* colocar credenciales en frontend;
-* confiar ciegamente en datos enviados por el cliente;
-* exponer información interna.
-
-Utilizar `.env` cuando corresponda.
-
-Mantener `.env.example` sin secretos reales.
-
----
-
-## 12. Comentarios
-
-No comentar código obvio.
-
-Incorrecto:
-
-```typescript
-// Increment counter
-counter++;
-```
-
-Los comentarios deben explicar principalmente:
-
-* por qué existe una decisión;
-* limitaciones;
-* comportamiento no evidente.
-
----
-
-## 13. Componentes React
-
-Evitar componentes gigantes.
-
-Un componente debe tener una responsabilidad clara.
-
-Separar:
-
-```text
-CardSearch
-CardDetails
-Card3D
-InfoNode
-FavoritesButton
-```
-
-No colocar toda la aplicación dentro de `App.tsx`.
-
----
-
-## 14. Hooks
-
-Utilizar hooks personalizados para lógica reutilizable.
-
-Ejemplos:
-
-```text
-useCardSearch()
-useFavorites()
-useAuth()
-```
-
-No crear hooks gigantes que manejen toda la aplicación.
-
----
-
-## 15. Estado
-
-Utilizar el nivel de estado más sencillo posible.
-
-Prioridad:
-
-1. estado local;
-2. hooks;
-3. Context;
-4. estado global solamente cuando sea necesario.
-
----
-
-## 16. Magic Numbers
-
-Evitar valores mágicos.
-
-Preferir:
-
-```typescript
-const SIGNIFICANT_PRICE_CHANGE_PERCENT = 5;
-```
-
-en lugar de:
-
-```typescript
-if (change > 5) {}
-```
-
-cuando el número tenga significado de negocio.
-
----
-
-## 17. Dependencias
-
-Antes de instalar una dependencia:
-
-1. identificar el problema;
-2. comprobar si ya existe una solución;
-3. evaluar mantenimiento;
-4. evaluar tamaño;
-5. evaluar seguridad;
-6. justificar su utilización.
-
-No instalar librerías por comodidad si una solución sencilla ya existe.
-
----
-
-## 18. Performance
-
-Optimizar únicamente cuando exista una razón.
-
-Priorizar:
-
-* renders eficientes;
-* lazy loading;
-* debounce;
-* cache;
-* reutilización de recursos 3D;
-* optimización de texturas.
-
-Evitar micro-optimizaciones innecesarias.
-
----
-
-## 19. 3D Performance
-
-Reutilizar:
-
-* geometrías;
-* materiales;
-* texturas cuando sea posible.
-
-Evitar crear objetos innecesarios en cada render.
-
-No cargar recursos pesados hasta necesitarlos.
-
----
-
-## 20. Code Smells
-
-Durante cada revisión buscar:
-
-* funciones gigantes;
-* componentes gigantes;
-* duplicación;
-* nombres ambiguos;
-* `any`;
-* lógica duplicada;
-* dependencias innecesarias;
-* imports sin utilizar;
-* errores ignorados;
-* lógica de negocio en componentes visuales;
-* acoplamiento excesivo;
-* comentarios innecesarios.
-
----
-
-## 21. Regla de diseño
-
-No utilizar patrones de diseño simplemente para demostrar conocimiento.
-
-Usar patrones únicamente cuando resuelvan un problema real.
-
-Patrones permitidos cuando sean apropiados:
-
-* Repository;
-* Service Layer;
-* Adapter;
-* Mapper;
-* Dependency Injection;
-* Custom Hooks.
-
-Evitar sobreingeniería.
-
----
-
-## 22. Principio final
-
-El mejor código para este proyecto es:
-
-```text
-Simple
-Readable
-Explicit
-Testable
-Maintainable
-Secure
-```
-
-No el código más sofisticado.

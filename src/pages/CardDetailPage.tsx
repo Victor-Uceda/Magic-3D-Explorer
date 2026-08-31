@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ChevronLeft,
   Heart,
   PlusCircle,
   ExternalLink,
+  Share2,
+  Check,
 } from 'lucide-react';
 import { Scene } from '../three';
 import { CardFinish } from '../three/Card3D';
 import { CollectorToolbar } from '../components/CollectorToolbar';
 import { CardInfoPanel } from '../components/CardInfoPanel';
 import { SearchResultsDrawer } from '../components/SearchResultsDrawer';
+import { getCardShareUrl } from '../utils/sharing';
 import type { Card } from '../types/card';
 
 interface CardDetailPageProps {
@@ -17,6 +20,7 @@ interface CardDetailPageProps {
   allCards: Card[];
   onSelectCard: (card: Card) => void;
   onBackToCatalog: () => void;
+  backLabel?: string;
   autoRotate: boolean;
   onToggleAutoRotate: () => void;
   resetCameraTrigger: number;
@@ -27,17 +31,28 @@ interface CardDetailPageProps {
   onChangeFinish: (finish: CardFinish) => void;
   enableParticles: boolean;
   onToggleParticles: () => void;
-  searchSummary: string;
+  searchSummary?: string;
   onAddToDeck?: (card: Card) => void;
   onToggleFavorite?: (card: Card) => void;
   isFavorite?: boolean;
 }
 
+/**
+ * Página de Detalle e Inspección en 3D
+ * 
+ * Orquesta:
+ * 1. Escena 3D de alta fidelidad con textura e iluminación física.
+ * 2. Barra de acciones rápidas (volver al catálogo, agregar al mazo, favoritos, Scryfall).
+ * 3. Panel lateral izquierdo: Sinergias recomendadas.
+ * 4. Panel lateral derecho: Códice técnico de reglas, precios y legalidades.
+ * 5. Barra inferior: Acabados (Normal, Foil, Etched), volteo 3D y selector de variantes.
+ */
 export const CardDetailPage: React.FC<CardDetailPageProps> = ({
   card,
-  allCards,
+  allCards: _allCards,
   onSelectCard,
   onBackToCatalog,
+  backLabel,
   autoRotate,
   resetCameraTrigger,
   isFlipped,
@@ -45,15 +60,16 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
   cardFinish,
   onChangeFinish,
   enableParticles,
-  onToggleParticles,
-  searchSummary,
+  searchSummary: _searchSummary,
   onAddToDeck,
   onToggleFavorite,
   isFavorite = false,
 }) => {
+  const [shareCopied, setShareCopied] = useState(false);
+
   return (
     <div className="card-detail-page-container">
-      {/* Background 3D High-Fidelity Studio Scene */}
+      {/* Escena 3D principal en canvas WebGL */}
       <Scene
         card={card}
         autoRotate={autoRotate}
@@ -64,16 +80,16 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
         onToggleFlip={onToggleFlip}
       />
 
-      {/* Floating Header Bar (Top - Glassmorphic Sanctum Style) */}
+      {/* Barra superior de navegación y acciones rápidas */}
       <header className="viewer-top-bar" role="banner">
         <button
           type="button"
           onClick={onBackToCatalog}
           className="viewer-back-btn"
-          title="Volver al Catálogo"
+          title={backLabel || 'Volver'}
         >
           <ChevronLeft size={16} />
-          <span>Volver al Catálogo</span>
+          <span>{backLabel || 'Volver'}</span>
         </button>
 
         <div className="viewer-card-title-badge">
@@ -102,6 +118,25 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
             <Heart size={14} fill={isFavorite ? 'var(--accent-red)' : 'none'} color={isFavorite ? 'var(--accent-red)' : 'currentColor'} />
           </button>
 
+          <button
+            type="button"
+            className="viewer-action-btn"
+            onClick={async () => {
+              try {
+                const url = getCardShareUrl(card);
+                await navigator.clipboard.writeText(url);
+                setShareCopied(true);
+                setTimeout(() => setShareCopied(false), 2500);
+              } catch {
+                // fallback
+              }
+            }}
+            title="Copiar enlace directo 3D"
+          >
+            {shareCopied ? <Check size={14} /> : <Share2 size={14} />}
+            <span>{shareCopied ? '¡Copiado!' : 'Compartir'}</span>
+          </button>
+
           {card.scryfallUri && (
             <a
               href={card.scryfallUri}
@@ -116,18 +151,15 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
         </div>
       </header>
 
-      {/* Left Drawer: Synergies & Search Results */}
+      {/* Panel lateral izquierdo: Sinergias recomendadas */}
       <div className="floating-sidebar-left">
         <SearchResultsDrawer
-          cards={allCards}
           currentCard={card}
           onSelectCard={(selected) => onSelectCard(selected)}
-          totalCards={allCards.length}
-          searchQueryDescription={searchSummary}
         />
       </div>
 
-      {/* Right Drawer: Card Technical Specifications & MTG Codex */}
+      {/* Panel lateral derecho: Códice técnico de reglas MTG */}
       <div className="floating-sidebar-right">
         <CardInfoPanel
           card={card}
@@ -135,13 +167,11 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
         />
       </div>
 
-      {/* Floating Studio Controls Dock (Normal, Foil, Etched, Flip, Rotation) */}
+      {/* Barra inferior: Control de acabados, volteo y variantes */}
       <CollectorToolbar
         currentCard={card}
         currentFinish={cardFinish}
         onChangeFinish={onChangeFinish}
-        enableParticles={enableParticles}
-        onToggleParticles={onToggleParticles}
         onSelectPrintVariant={(variant) => onSelectCard(variant)}
         isFlipped={isFlipped}
         onToggleFlip={onToggleFlip}

@@ -32,8 +32,8 @@ export const CameraController: React.FC<CameraControllerProps> = ({
       dampingFactor={0.06}
       minDistance={minDistance}
       maxDistance={maxDistance}
-      maxPolarAngle={Math.PI * 0.95} // Full downward viewing angle (almost 180°)
-      minPolarAngle={0.08}           // Full upward top-down viewing angle
+      maxPolarAngle={Math.PI * 0.95} // Ángulo de visualización hacia abajo completo (casi 180°)
+      minPolarAngle={0.08}           // Ángulo de visualización cenital superior completo
       autoRotate={autoRotate}
       autoRotateSpeed={autoRotateSpeed}
       makeDefault

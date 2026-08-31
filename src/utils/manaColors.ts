@@ -27,8 +27,8 @@ export function getManaAuraColor(colors?: string[] | null): string {
       // Rojo -> Fuego carmesí
       return '#ef4444';
     case 'G':
-      // Verde -> Esmeralda bosque
-      return '#22c55e';
+      // Verde -> Esmeralda bosque profunda
+      return '#15803d';
     default:
       return '#8c733e';
   }

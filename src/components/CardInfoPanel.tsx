@@ -13,7 +13,7 @@ interface CardInfoPanelProps {
   onSelectCard?: (card: Card) => void;
 }
 
-export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
+const CardInfoPanelComponent: React.FC<CardInfoPanelProps> = ({ card }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   if (!card) return null;
@@ -34,6 +34,8 @@ export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
     { name: 'Standard', status: card.legalities.standard },
     { name: 'Pioneer', status: card.legalities.pioneer },
     { name: 'Legacy', status: card.legalities.legacy },
+    { name: 'Vintage', status: card.legalities.vintage },
+    { name: 'Pauper', status: card.legalities.pauper },
   ];
 
   return (
@@ -58,9 +60,13 @@ export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
           <div className="grimoire-header">
             <div className="grimoire-title-row">
               <h2 className="grimoire-card-name">{card.name}</h2>
-              {card.manaCost && (
-                <div className="grimoire-mana-cost">
-                  <ManaCost manaCost={card.manaCost} size={22} />
+              {(card.manaCost || (card.colorIdentity && card.colorIdentity.length > 0)) && (
+                <div className="grimoire-mana-cost" title="Coste de Maná / Identidad de Color">
+                  {card.manaCost ? (
+                    <ManaCost manaCost={card.manaCost} size={22} />
+                  ) : (
+                    <ManaCost manaCost={card.colorIdentity?.map((c) => `{${c}}`).join('') || '{C}'} size={20} />
+                  )}
                 </div>
               )}
             </div>
@@ -73,44 +79,61 @@ export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
             </div>
           </div>
 
-          {/* Clean Price Row */}
+          {/* Market Valuation Row */}
           <div className="grimoire-price-row">
             <span className="price-label">PRECIO MERCADO</span>
             <div className="price-value-group">
               <span className="price-pen">{pricePen}</span>
-              {card.prices.usd && <span className="price-usd">(${card.prices.usd})</span>}
+              {card.prices.usd && <span className="price-usd">(${card.prices.usd} USD)</span>}
+              {card.prices.usdFoil && (
+                <span className="price-usd" style={{ color: 'var(--accent-gold)' }}>
+                  (Foil: ${card.prices.usdFoil})
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Stats Bar (P/T, Loyalty, EDHREC Rank) */}
-          {(hasCombatStats || hasLoyalty || card.edhrecRank) && (
-            <div className="grimoire-metrics-row">
-              {hasCombatStats && (
-                <div className="metric-chip">
-                  <span className="metric-label">P / T</span>
-                  <span className="metric-val">{card.power} / {card.toughness}</span>
-                </div>
-              )}
-              {hasLoyalty && (
-                <div className="metric-chip">
-                  <span className="metric-label">LEALTAD</span>
-                  <span className="metric-val">[{card.loyalty}]</span>
-                </div>
-              )}
-              {card.edhrecRank && (
-                <div className="metric-chip">
-                  <span className="metric-label">EDHREC</span>
-                  <span className="metric-val">#{card.edhrecRank.toLocaleString()}</span>
-                </div>
-              )}
+          {/* Stats Bar (P/T, Loyalty, EDHREC Rank, CMC) */}
+          <div className="grimoire-metrics-row">
+            {hasCombatStats && (
+              <div className="metric-chip">
+                <span className="metric-label">P / T</span>
+                <span className="metric-val">{card.power} / {card.toughness}</span>
+              </div>
+            )}
+            {hasLoyalty && (
+              <div className="metric-chip">
+                <span className="metric-label">LEALTAD</span>
+                <span className="metric-val">[{card.loyalty}]</span>
+              </div>
+            )}
+            <div className="metric-chip">
+              <span className="metric-label">COSTE (CMC)</span>
+              <span className="metric-val">{card.cmc}</span>
             </div>
-          )}
+            {card.edhrecRank && (
+              <div className="metric-chip">
+                <span className="metric-label">EDHREC</span>
+                <span className="metric-val">#{card.edhrecRank.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
 
-          {/* Rules Text (Oracle) */}
+          {/* Primary Rules Text (Oracle) */}
           {card.oracleText && (
             <div className="grimoire-oracle-section">
               <div className="section-eyebrow">Texto de Reglas</div>
-              <OracleText text={card.oracleText} symbolSize={16} className="oracle-text-content" />
+              <OracleText text={card.oracleText} symbolSize={15} className="oracle-text-content" />
+            </div>
+          )}
+
+          {/* Back Face Rules Text (For DFC) */}
+          {card.backOracleText && (
+            <div className="grimoire-oracle-section" style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '0.5rem' }}>
+              <div className="section-eyebrow">
+                Cara Trasera: {card.backName || 'Reverso'} {card.backTypeLine ? `(${card.backTypeLine})` : ''}
+              </div>
+              <OracleText text={card.backOracleText} symbolSize={15} className="oracle-text-content" />
             </div>
           )}
 
@@ -127,12 +150,26 @@ export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
             <div className="legalities-list">
               {formats.map((f) => {
                 const isLegal = f.status === 'legal';
+                const isRestricted = f.status === 'restricted';
+                const isBanned = f.status === 'banned';
                 return (
                   <span
                     key={f.name}
                     className={`format-tag ${isLegal ? 'format-legal' : 'format-not-legal'}`}
+                    title={`${f.name}: ${f.status}`}
                   >
-                    <span className={`format-dot ${isLegal ? 'dot-legal' : 'dot-not-legal'}`} />
+                    <span
+                      className="format-dot"
+                      style={{
+                        background: isLegal
+                          ? '#10b981'
+                          : isRestricted
+                          ? '#f59e0b'
+                          : isBanned
+                          ? '#ef4444'
+                          : '#475569',
+                      }}
+                    />
                     <span>{f.name}</span>
                   </span>
                 );
@@ -140,16 +177,22 @@ export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
             </div>
           </div>
 
-          {/* Metadata Footer */}
+          {/* Metadata Full Footer */}
           <div className="grimoire-meta-footer">
             <div className="meta-line">
               <span className="meta-k">Colección:</span>
-              <span className="meta-v">{card.setName} ({card.setCode.toUpperCase()})</span>
+              <span className="meta-v">{card.setName} [{card.setCode.toUpperCase()}] #{card.collectorNumber}</span>
             </div>
             {card.artist && (
               <div className="meta-line">
-                <span className="meta-k">Artista:</span>
+                <span className="meta-k">Ilustrador:</span>
                 <span className="meta-v">{card.artist}</span>
+              </div>
+            )}
+            {card.releasedAt && (
+              <div className="meta-line">
+                <span className="meta-k">Lanzamiento:</span>
+                <span className="meta-v">{card.releasedAt}</span>
               </div>
             )}
           </div>
@@ -158,5 +201,10 @@ export const CardInfoPanel: React.FC<CardInfoPanelProps> = ({ card }) => {
     </aside>
   );
 };
+
+export const CardInfoPanel = React.memo(
+  CardInfoPanelComponent,
+  (prev, next) => prev.card?.id === next.card?.id
+);
 
 export default CardInfoPanel;
