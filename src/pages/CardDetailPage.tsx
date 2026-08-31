@@ -6,6 +6,8 @@ import {
   ExternalLink,
   Share2,
   Check,
+  Info,
+  Sparkles,
 } from 'lucide-react';
 import { Scene } from '../three';
 import { CardFinish } from '../three/Card3D';
@@ -66,6 +68,8 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
   isFavorite = false,
 }) => {
   const [shareCopied, setShareCopied] = useState(false);
+  const [isInfoOpenManual, setIsInfoOpenManual] = useState<boolean | undefined>(undefined);
+  const [isSynergiesOpenManual, setIsSynergiesOpenManual] = useState<boolean | undefined>(undefined);
 
   return (
     <div className="card-detail-page-container">
@@ -99,6 +103,34 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
         </div>
 
         <div className="viewer-quick-actions">
+          {/* Botón de Sinergias (Solo visible en móviles/tablets) */}
+          <button
+            type="button"
+            className={`viewer-action-btn viewer-mobile-only-btn ${isSynergiesOpenManual ? 'viewer-fav-active' : ''}`}
+            onClick={() => {
+              setIsSynergiesOpenManual((prev) => !(prev ?? false));
+              setIsInfoOpenManual(false);
+            }}
+            title={isSynergiesOpenManual ? 'Cerrar Sinergias' : 'Ver Sinergias Recomendadas'}
+          >
+            <Sparkles size={14} color={isSynergiesOpenManual ? 'var(--accent-gold)' : 'currentColor'} />
+            <span>Sinergias</span>
+          </button>
+
+          {/* Botón manual de información de carta (Solo visible en móviles/tablets) */}
+          <button
+            type="button"
+            className={`viewer-action-btn viewer-mobile-only-btn ${isInfoOpenManual ? 'viewer-fav-active' : ''}`}
+            onClick={() => {
+              setIsInfoOpenManual((prev) => !(prev ?? false));
+              setIsSynergiesOpenManual(false);
+            }}
+            title={isInfoOpenManual ? 'Cerrar Información' : 'Ver Información de la Carta'}
+          >
+            <Info size={14} color={isInfoOpenManual ? 'var(--accent-gold)' : 'currentColor'} />
+            <span>Info</span>
+          </button>
+
           <button
             type="button"
             className="viewer-action-btn"
@@ -155,6 +187,8 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
       <div className="floating-sidebar-left">
         <SearchResultsDrawer
           currentCard={card}
+          isOpenManual={isSynergiesOpenManual}
+          onToggleManual={setIsSynergiesOpenManual}
           onSelectCard={(selected) => onSelectCard(selected)}
         />
       </div>
@@ -163,6 +197,8 @@ export const CardDetailPage: React.FC<CardDetailPageProps> = ({
       <div className="floating-sidebar-right">
         <CardInfoPanel
           card={card}
+          isOpenManual={isInfoOpenManual}
+          onToggleManual={setIsInfoOpenManual}
           onSelectCard={(selected) => onSelectCard(selected)}
         />
       </div>

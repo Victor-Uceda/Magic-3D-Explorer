@@ -477,3 +477,82 @@
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-xs);
 }
+
+/* ==========================================================================
+   Responsive Adaptations (Tablet & Mobile only)
+   Desktop (>=1025px) remains 100% UNTOUCHED
+   ========================================================================== */
+
+/* Tablet (769px - 1024px) */
+@media (max-width: 1024px) {
+  .catalog-cards-grid,
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Mobile (<= 640px) */
+@media (max-width: 640px) {
+  .catalog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .catalog-toolbar-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .catalog-toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .catalog-title {
+    font-size: 1.15rem;
+  }
+
+  .catalog-cards-grid,
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+
+  .catalog-grid-item,
+  .catalog-card-item {
+    padding: 0.38rem;
+    gap: 0.35rem;
+  }
+
+  .card-item-name,
+  .card-name {
+    font-size: 0.74rem;
+  }
+
+  .card-item-details,
+  .card-sub-meta {
+    font-size: 0.64rem;
+  }
+
+  .card-3d-badge-pill {
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  .deck-page-header,
+  .collection-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .deck-page-title,
+  .collection-title {
+    font-size: 1.15rem;
+  }
+}
+

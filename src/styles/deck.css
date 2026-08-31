@@ -421,3 +421,80 @@
   border-radius: var(--radius-xs);
   cursor: pointer;
 }
+
+/* ==========================================================================
+   Responsive Adaptations (Tablet & Mobile only)
+   Desktop (>=1025px) remains 100% UNTOUCHED
+   ========================================================================== */
+
+/* Tablet & Mobile (<= 860px) */
+@media (max-width: 860px) {
+  .deck-page-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .decks-sidebar {
+    width: 100%;
+  }
+
+  .decks-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.45rem;
+  }
+
+  .deck-main-panel {
+    padding: 1rem;
+    min-height: auto;
+  }
+
+  .active-deck-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .deck-action-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .deck-share-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .deck-share-info {
+    width: 100%;
+  }
+
+  .deck-share-copy-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .deck-cards-list-grid {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}
+
+/* Mobile Small (<= 480px) */
+@media (max-width: 480px) {
+  .decks-list {
+    grid-template-columns: 1fr;
+  }
+
+  .deck-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .deck-card-chip {
+    padding: 0.35rem 0.5rem;
+  }
+}
+

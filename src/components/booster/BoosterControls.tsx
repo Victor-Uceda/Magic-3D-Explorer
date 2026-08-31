@@ -32,23 +32,7 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
   return (
     <>
       {/* Top Card Progress Dots */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '4.6rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.35rem',
-          zIndex: 35,
-          background: 'rgba(15, 17, 23, 0.6)',
-          backdropFilter: 'blur(8px)',
-          padding: '0.35rem 0.75rem',
-          borderRadius: '9999px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
+      <div className="booster-dots-container">
         {pack.cards.map((c, i) => {
           const isCurrent = i === currentIndex;
           const isRev = revealedIndices.has(i);
@@ -80,31 +64,8 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
       </div>
 
       {/* Right Floating Card Details */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '7.5rem',
-          right: '1.5rem',
-          width: '260px',
-          zIndex: 35,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-          animation: 'fadeIn 0.2s ease',
-        }}
-      >
-        <div
-          style={{
-            background: 'rgba(15, 17, 23, 0.65)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '10px',
-            padding: '0.75rem 0.85rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.35rem',
-          }}
-        >
+      <div className="booster-card-details-floating">
+        <div className="booster-details-card-inner">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span
               style={{
@@ -138,43 +99,13 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
       </div>
 
       {/* Bottom Dock */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '1.75rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          zIndex: 35,
-          background: 'rgba(15, 17, 23, 0.75)',
-          backdropFilter: 'blur(10px)',
-          padding: '0.45rem 0.75rem',
-          borderRadius: '9999px',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
-        }}
-      >
+      <div className="booster-controls-dock">
         {/* Previous Card Button */}
         {currentIndex > 0 && (
           <button
             type="button"
             onClick={onPrevCard}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#cbd5e1',
-              borderRadius: '9999px',
-              padding: '0.45rem 0.75rem',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              transition: 'all 0.15s ease',
-            }}
+            className="booster-ctrl-btn"
           >
             <ArrowLeft size={14} />
             <span>Anterior</span>
@@ -185,20 +116,7 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
         <button
           type="button"
           onClick={onToggleCardFlip}
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            color: '#cbd5e1',
-            borderRadius: '9999px',
-            padding: '0.45rem 0.75rem',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            transition: 'all 0.15s ease',
-          }}
+          className="booster-ctrl-btn"
           title="Voltear carta"
         >
           <Repeat size={14} />
@@ -209,23 +127,9 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
         <button
           type="button"
           onClick={onNextCard}
-          style={{
-            background: '#1e2434',
-            color: '#f8fafc',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
-            borderRadius: '9999px',
-            padding: '0.5rem 1.25rem',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.5)',
-            transition: 'all 0.15s ease',
-          }}
+          className="booster-ctrl-btn booster-ctrl-btn-primary"
         >
-          <span>{currentIndex + 1 === 15 ? 'Ver Resumen Final' : `Siguiente (${currentIndex + 1}/15)`}</span>
+          <span>{currentIndex + 1 === 15 ? 'Resumen' : `Siguiente (${currentIndex + 1}/15)`}</span>
           <ArrowRight size={15} />
         </button>
 
@@ -233,17 +137,7 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
         <button
           type="button"
           onClick={onRevealAll}
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            color: '#94a3b8',
-            borderRadius: '9999px',
-            padding: '0.45rem 0.75rem',
-            fontSize: '0.72rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
+          className="booster-ctrl-btn booster-ctrl-btn-ghost"
         >
           Ver Todo
         </button>
@@ -253,3 +147,4 @@ export const BoosterControls: React.FC<BoosterControlsProps> = ({
 };
 
 export default BoosterControls;
+

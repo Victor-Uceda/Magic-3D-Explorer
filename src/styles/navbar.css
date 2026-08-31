@@ -222,3 +222,142 @@
   cursor: pointer;
   transition: all 0.15s ease;
 }
+
+/* ==========================================================================
+   Responsive Adaptations (Tablet & Mobile only)
+   Desktop (>=1025px) remains 100% UNTOUCHED
+   ========================================================================== */
+
+/* Hide Mobile Bottom Nav on Desktop by default */
+.app-mobile-bottom-nav {
+  display: none;
+}
+
+/* Tablet (769px - 1024px) */
+@media (max-width: 1024px) {
+  .app-navbar-inner {
+    padding: 0 1rem;
+    gap: 0.75rem;
+  }
+
+  .nav-action-btn .btn-label {
+    display: none;
+  }
+
+  .nav-action-btn {
+    padding: 0.42rem 0.55rem;
+  }
+}
+
+/* Mobile (<= 768px) */
+@media (max-width: 768px) {
+  .app-navbar-single {
+    height: 52px;
+  }
+
+  .app-navbar-inner {
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .app-navbar-logo {
+    padding: 0.2rem 0.25rem 0.2rem 0;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+  }
+
+  .kbd-shortcut {
+    display: none;
+  }
+
+  .search-form {
+    padding: 0.32rem 0.65rem;
+  }
+
+  .search-form input {
+    font-size: 0.76rem;
+  }
+
+  .centered-search-pill {
+    max-width: none;
+  }
+
+  /* Hide redundant desktop action buttons on mobile, keep User / Random */
+  .app-navbar-actions .nav-action-btn:not(.profile-dropdown-container .nav-action-btn) {
+    display: none;
+  }
+
+  .app-navbar-actions .nav-icon-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  .app-mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(12, 15, 22, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 60;
+    align-items: center;
+    justify-content: space-around;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.4rem 0;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+
+  .mobile-nav-item:active {
+    transform: scale(0.95);
+  }
+
+  .mobile-nav-item-active {
+    color: var(--accent-gold);
+  }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 14px);
+    background: var(--accent-gold);
+    color: #0f172a;
+    font-size: 0.55rem;
+    font-weight: 900;
+    border-radius: 9999px;
+    padding: 0.05rem 0.3rem;
+    min-width: 14px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Offset for main container to not overlap bottom nav */
+  .app-main-content:not(.fullscreen-3d-main) {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+

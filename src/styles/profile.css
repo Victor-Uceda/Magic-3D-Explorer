@@ -168,3 +168,17 @@
   border-color: rgba(239, 68, 68, 0.35);
   color: #f87171;
 }
+
+/* ==========================================================================
+   Responsive Adaptations (Tablet & Mobile only)
+   Desktop (>=1025px) remains 100% UNTOUCHED
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .profile-dropdown-menu {
+    width: calc(100vw - 1.5rem);
+    max-width: 290px;
+    right: -0.5rem;
+  }
+}
+

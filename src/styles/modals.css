@@ -783,6 +783,30 @@
 }
 
 /* Responsive: filters as drawer on mobile */
+@media (max-width: 600px) {
+  .quick-view-modal-container {
+    padding: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .quick-view-modal-content {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .quick-view-card-img {
+    max-width: 180px;
+    margin: 0 auto;
+  }
+
+  .variants-modal-grid {
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+    gap: 0.65rem;
+    padding: 0.85rem;
+  }
+}
+
 @media (max-width: 480px) {
   .advanced-filters-panel {
     max-width: 100%;
@@ -805,4 +829,5 @@
     font-size: 0.82rem;
   }
 }
+
 

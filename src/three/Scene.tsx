@@ -38,9 +38,21 @@ export const Scene: React.FC<SceneProps> = ({
     [card?.colors, card?.colorIdentity]
   );
 
-  // Partículas adaptativas según el tamaño de pantalla
-  const { isMobile } = useResponsive();
+  // Partículas y cámara adaptativas según el tamaño de pantalla (zoom reducido en mobile)
+  const { isMobile, isTablet } = useResponsive();
   const particleCount = isMobile ? PARTICLE_CONSTANTS.MOBILE_COUNT : PARTICLE_CONSTANTS.DEFAULT_COUNT;
+
+  // Cámara optimizada: en PC 6.2, en tablets 7.2, en mobile 8.2 para zoom cómodo sin recortes
+  const cameraPosition: [number, number, number] = useMemo(() => {
+    if (isMobile) return [0, 0.3, 8.2];
+    if (isTablet) return [0, 0.4, 7.2];
+    return [0, 0.5, 6.2];
+  }, [isMobile, isTablet]);
+
+  const cameraFov = useMemo(() => {
+    if (isMobile) return 45;
+    return 42;
+  }, [isMobile]);
 
   return (
     <div
@@ -58,7 +70,7 @@ export const Scene: React.FC<SceneProps> = ({
       <Canvas
         shadows={false} // Rendimiento óptimo sin recálculos pesados de sombras
         dpr={[1, 1.5]} // Límite de DPR para fluidez total
-        camera={{ position: [0, 0.5, 6.2], fov: 42 }}
+        camera={{ position: cameraPosition, fov: cameraFov }}
         style={{
           width: '100%',
           height: '100%',

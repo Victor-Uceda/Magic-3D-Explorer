@@ -8,6 +8,8 @@ import type { Card } from '../types/card';
 interface SearchResultsDrawerProps {
   currentCard: Card;
   onSelectCard: (card: Card) => void;
+  isOpenManual?: boolean;
+  onToggleManual?: (open: boolean) => void;
 }
 
 // Caché en memoria de sinergias para evitar re-peticiones y parpadeos al cambiar acabados o voltear
@@ -16,8 +18,31 @@ const synergiesCache = new Map<string, Card[]>();
 export const SearchResultsDrawerComponent: React.FC<SearchResultsDrawerProps> = ({
   currentCard,
   onSelectCard,
+  isOpenManual,
+  onToggleManual,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
+
+  // Sincronizar con control externo
+  useEffect(() => {
+    if (isOpenManual !== undefined) {
+      setIsCollapsed(!isOpenManual);
+    }
+  }, [isOpenManual]);
+
+  const handleToggle = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      onToggleManual?.(!next);
+      return next;
+    });
+  };
+
   const [synergies, setSynergies] = useState<Card[]>(() => {
     return currentCard ? synergiesCache.get(currentCard.id) || [] : [];
   });
@@ -77,7 +102,7 @@ export const SearchResultsDrawerComponent: React.FC<SearchResultsDrawerProps> = 
       {/* Side-tab toggle attached strictly outside the panel */}
       <button
         type="button"
-        onClick={() => setIsCollapsed((prev) => !prev)}
+        onClick={handleToggle}
         className="grimoire-drawer-tab-toggle"
         title={isCollapsed ? 'Desplegar panel de sinergias' : 'Ocultar panel'}
         aria-expanded={!isCollapsed}

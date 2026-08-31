@@ -295,8 +295,59 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (Visible only on mobile/tablets <= 768px via CSS) */}
+      <nav className="app-mobile-bottom-nav" aria-label="Navegación móvil">
+        <button
+          type="button"
+          onClick={() => onRouteChange('home')}
+          className={`mobile-nav-item ${currentRoute === 'home' ? 'mobile-nav-item-active' : ''}`}
+        >
+          <BookOpen size={18} />
+          <span>Inicio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onRouteChange('catalog')}
+          className={`mobile-nav-item ${currentRoute === 'catalog' ? 'mobile-nav-item-active' : ''}`}
+        >
+          <BookOpen size={18} />
+          <span>Catálogo</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onRouteChange('decks')}
+          className={`mobile-nav-item ${currentRoute === 'decks' ? 'mobile-nav-item-active' : ''}`}
+        >
+          <Swords size={18} />
+          <span>Mazos</span>
+          {deckCount > 0 && <span className="mobile-nav-badge">{deckCount}</span>}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onRouteChange('booster')}
+          className={`mobile-nav-item ${currentRoute === 'booster' ? 'mobile-nav-item-active' : ''}`}
+        >
+          <PackageOpen size={18} />
+          <span>Sobres 3D</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onRouteChange('collection')}
+          className={`mobile-nav-item ${currentRoute === 'collection' ? 'mobile-nav-item-active' : ''}`}
+        >
+          <Heart size={18} />
+          <span>Colección</span>
+          {favoritesCount > 0 && <span className="mobile-nav-badge">{favoritesCount}</span>}
+        </button>
+      </nav>
     </header>
   );
 };
 
 export default Navbar;
+

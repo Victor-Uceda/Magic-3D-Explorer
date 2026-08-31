@@ -104,10 +104,16 @@
   pointer-events: auto;
 }
 
+/* Hidden by default on PC / Desktop */
+.viewer-mobile-only-btn {
+  display: none !important;
+}
+
 .viewer-fav-active {
   border-color: rgba(239, 68, 68, 0.4);
   background: rgba(239, 68, 68, 0.18);
 }
+
 
 /* ==========================================================================
    Left Drawer: Cards List & Synergies (Mimetized Organic Floating Glass)
@@ -881,4 +887,316 @@
 .booster-page-container {
   background: #090b10;
 }
+
+/* ==========================================================================
+   Responsive Adaptations (Tablet & Mobile only)
+   Desktop (>=1025px) remains 100% UNTOUCHED
+   ========================================================================== */
+
+/* Tablet (769px - 1024px) */
+@media (max-width: 1024px) {
+  .viewer-card-title-badge {
+    max-width: 32vw;
+    font-size: 0.74rem;
+    padding: 0.35rem 0.85rem;
+  }
+
+  .grimoire-hud-panel {
+    width: 300px;
+  }
+
+  .grimoire-drawer-panel {
+    width: 270px;
+  }
+}
+
+/* Mobile (<= 768px) */
+@media (max-width: 768px) {
+  .viewer-top-bar {
+    top: 0.65rem;
+    left: 0.65rem;
+    right: 0.65rem;
+  }
+
+  .viewer-back-btn,
+  .viewer-action-btn {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.72rem;
+  }
+
+  .viewer-mobile-only-btn {
+    display: flex !important;
+  }
+
+  /* Hide center badge on narrow mobile to avoid collision with actions */
+  .viewer-card-title-badge {
+    display: none;
+  }
+
+  .floating-sidebar-left {
+    top: 3.5rem;
+    left: 0;
+    bottom: 4.5rem;
+  }
+
+  .floating-sidebar-right {
+    top: 3.5rem;
+    right: 0;
+    bottom: 4.5rem;
+  }
+
+  .grimoire-hud-panel,
+  .grimoire-drawer-panel {
+    width: min(320px, calc(100vw - 2.5rem));
+    border-radius: 16px;
+  }
+
+  .grimoire-hud-collapsed,
+  .grimoire-drawer-collapsed {
+    width: 0px !important;
+    pointer-events: none;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* Distinct and clearly visible side tab toggles on mobile */
+  .grimoire-drawer-tab-toggle {
+    pointer-events: auto;
+    right: -36px;
+    width: 36px;
+    height: 44px;
+    background: rgba(18, 22, 32, 0.92);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    color: var(--accent-gold);
+    box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+  .grimoire-tab-toggle {
+    pointer-events: auto;
+    left: -36px;
+    width: 36px;
+    height: 44px;
+    background: rgba(18, 22, 32, 0.92);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    color: var(--accent-gold);
+    box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+
+  /* Compact dock fitting 100% of mobile screens without overflowing */
+  .collector-stage-dock {
+    bottom: 0.75rem;
+    padding: 0.25rem 0.35rem;
+    gap: 0.2rem;
+    max-width: calc(100vw - 1rem);
+    width: max-content;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .collector-stage-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-finish-btn,
+  .dock-tool-btn {
+    padding: 0.32rem 0.48rem;
+    font-size: 0.68rem;
+    gap: 0.2rem;
+    flex-shrink: 0;
+  }
+
+  .dock-finish-btn .finish-name {
+    font-size: 0.68rem;
+  }
+
+  /* Hide keyboard shortcuts on touch devices */
+  .finish-shortcut,
+  .tool-shortcut,
+  .dock-separator {
+    display: none;
+  }
+}
+
+/* Mobile Small (<= 480px) */
+@media (max-width: 480px) {
+  .viewer-action-btn span {
+    display: none;
+  }
+
+  .viewer-back-btn span {
+    font-size: 0.7rem;
+  }
+
+  .grimoire-hud-panel,
+  .grimoire-drawer-panel {
+    width: calc(100vw - 2rem);
+  }
+
+  .collector-stage-dock {
+    bottom: 0.5rem;
+    padding: 0.2rem 0.3rem;
+    gap: 0.15rem;
+  }
+
+  .dock-finish-btn,
+  .dock-tool-btn {
+    padding: 0.3rem 0.42rem;
+    font-size: 0.66rem;
+  }
+}
+
+
+
+/* ==========================================================================
+   Booster Controls & Floating Panels
+   ========================================================================== */
+
+.booster-dots-container {
+  position: absolute;
+  top: 4.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  z-index: 35;
+  background: rgba(15, 17, 23, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.booster-card-details-floating {
+  position: absolute;
+  top: 7.5rem;
+  right: 1.5rem;
+  width: 260px;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.booster-details-card-inner {
+  background: rgba(15, 17, 23, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.booster-controls-dock {
+  position: absolute;
+  bottom: 1.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 35;
+  background: rgba(15, 17, 23, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0.45rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.booster-ctrl-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  border-radius: 9999px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.booster-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.booster-ctrl-btn-primary {
+  background: #1e2434;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.booster-ctrl-btn-primary:hover {
+  background: #2a334a;
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.booster-ctrl-btn-ghost {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+/* Mobile Media Queries for Booster */
+@media (max-width: 600px) {
+  .booster-dots-container {
+    top: 3.8rem;
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+    max-width: calc(100vw - 1.5rem);
+    overflow-x: auto;
+  }
+
+  .booster-card-details-floating {
+    top: auto;
+    bottom: 4.8rem;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(300px, calc(100vw - 2rem));
+  }
+
+  .booster-details-card-inner {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .booster-controls-dock {
+    bottom: 1rem;
+    padding: 0.35rem 0.55rem;
+    gap: 0.3rem;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .booster-ctrl-btn {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .booster-ctrl-btn-primary {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.76rem;
+  }
+}
+
+
 

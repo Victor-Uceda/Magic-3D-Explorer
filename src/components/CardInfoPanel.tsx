@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronRight,
   ChevronLeft,
@@ -11,10 +11,37 @@ import type { Card } from '../types/card';
 interface CardInfoPanelProps {
   card: Card | null;
   onSelectCard?: (card: Card) => void;
+  isOpenManual?: boolean;
+  onToggleManual?: (open: boolean) => void;
 }
 
-const CardInfoPanelComponent: React.FC<CardInfoPanelProps> = ({ card }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+const CardInfoPanelComponent: React.FC<CardInfoPanelProps> = ({
+  card,
+  isOpenManual,
+  onToggleManual,
+}) => {
+  // Inicia colapsado en pantallas móviles (< 1024px) para no tapar la carta 3D por defecto
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
+
+  // Sincronizar si se controla externamente mediante botón de barra superior
+  useEffect(() => {
+    if (isOpenManual !== undefined) {
+      setIsCollapsed(!isOpenManual);
+    }
+  }, [isOpenManual]);
+
+  const handleToggle = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      onToggleManual?.(!next);
+      return next;
+    });
+  };
 
   if (!card) return null;
 
@@ -46,7 +73,7 @@ const CardInfoPanelComponent: React.FC<CardInfoPanelProps> = ({ card }) => {
       {/* Side-tab toggle attached strictly outside the panel */}
       <button
         type="button"
-        onClick={() => setIsCollapsed((prev) => !prev)}
+        onClick={handleToggle}
         className="grimoire-tab-toggle"
         title={isCollapsed ? 'Desplegar ficha de carta' : 'Ocultar ficha de carta'}
         aria-expanded={!isCollapsed}

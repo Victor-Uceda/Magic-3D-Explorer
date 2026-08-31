@@ -12,12 +12,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCDhHP3iGAGOw0IDYuz0i5dZimxd1WbjuE',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'magic-3d-81be2.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'magic-3d-81be2',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'magic-3d-81be2.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '113405395052',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:113405395052:web:5348f37704c4a83fe8d849',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Evita re-inicializaciones en entornos de desarrollo con Hot Module Replacement (HMR)
