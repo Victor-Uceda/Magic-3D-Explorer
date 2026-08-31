@@ -16,9 +16,20 @@ export interface UseDecksReturn {
 export function useDecks(
   storageRepo: ICardStorageRepository = defaultStorageRepository
 ): UseDecksReturn {
-  const [decks, setDecks] = useState<DeckItem[]>(() => storageRepo.getDecks());
+  const [decks, setDecksState] = useState<DeckItem[]>(() => storageRepo.getDecks());
 
-  // Persistir en el repositorio
+  const setDecks: React.Dispatch<React.SetStateAction<DeckItem[]>> = useCallback(
+    (action) => {
+      setDecksState((prev) => {
+        const next = typeof action === 'function' ? (action as (prev: DeckItem[]) => DeckItem[])(prev) : action;
+        storageRepo.saveDecks(next);
+        return next;
+      });
+    },
+    [storageRepo]
+  );
+
+  // Persistir en el repositorio de respaldo
   useEffect(() => {
     storageRepo.saveDecks(decks);
   }, [decks, storageRepo]);
@@ -33,15 +44,15 @@ export function useDecks(
       createdAt: Date.now(),
     };
     setDecks((prev) => [newDeck, ...prev]);
-  }, []);
+  }, [setDecks]);
 
   const deleteDeck = useCallback((deckId: string) => {
     setDecks((prev) => prev.filter((d) => d.id !== deckId));
-  }, []);
+  }, [setDecks]);
 
   const updateDeck = useCallback((updated: DeckItem) => {
     setDecks((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
-  }, []);
+  }, [setDecks]);
 
   const addCardsToDeck = useCallback((deckId: string, cardsToAdd: Card[]) => {
     setDecks((prev) =>
@@ -65,11 +76,11 @@ export function useDecks(
         };
       })
     );
-  }, []);
+  }, [setDecks]);
 
   const importDeck = useCallback((deck: DeckItem) => {
     setDecks((prev) => [deck, ...prev.filter((d) => d.id !== deck.id)]);
-  }, []);
+  }, [setDecks]);
 
   return {
     decks,
