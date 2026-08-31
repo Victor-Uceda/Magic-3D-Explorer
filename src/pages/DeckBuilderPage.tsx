@@ -214,17 +214,6 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
                 <div className="deck-action-buttons">
                   <button
                     type="button"
-                    onClick={handleCopyShareLink}
-                    disabled={!deckShareUrl}
-                    className={`deck-btn-secondary ${isCopiedShare ? 'copied' : ''}`}
-                    title="Copiar enlace directo 3D para compartir este mazo"
-                  >
-                    {isCopiedShare ? <Check size={14} /> : <Link2 size={14} color="var(--accent-gold)" />}
-                    <span>{isCopiedShare ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => onNavigate('catalog')}
                     className="deck-btn-secondary"
                     title="Buscar cartas en el catálogo para incorporar"
@@ -265,18 +254,28 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
               {/* Direct Share Link Display Banner */}
               {deckShareUrl && (
                 <div className="deck-share-banner">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
-                    <Link2 size={13} color="var(--accent-gold)" style={{ flexShrink: 0 }} />
-                    <span className="deck-share-url-text">{deckShareUrl}</span>
+                  <div className="deck-share-info">
+                    <span className="deck-share-label">
+                      <Link2 size={13} />
+                      <span>Compartir 3D:</span>
+                    </span>
+                    <input
+                      type="text"
+                      readOnly
+                      value={deckShareUrl}
+                      className="deck-share-input"
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      title="Haz clic para seleccionar el enlace completo"
+                    />
                   </div>
                   <button
                     type="button"
                     onClick={handleCopyShareLink}
-                    className="deck-btn-secondary"
-                    style={{ padding: '0.3rem 0.6rem', fontSize: '0.72rem', flexShrink: 0 }}
+                    className={`deck-share-copy-btn ${isCopiedShare ? 'copied' : ''}`}
+                    title="Copiar enlace directo 3D al portapapeles"
                   >
-                    {isCopiedShare ? <Check size={12} /> : <Link2 size={12} />}
-                    <span>{isCopiedShare ? 'Copiado' : 'Copiar'}</span>
+                    {isCopiedShare ? <Check size={13} /> : <Link2 size={13} />}
+                    <span>{isCopiedShare ? '¡Copiado!' : 'Copiar Enlace'}</span>
                   </button>
                 </div>
               )}
