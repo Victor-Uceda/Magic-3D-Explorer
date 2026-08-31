@@ -1,5 +1,16 @@
 import { ScryfallCard } from './types';
-import { Card, LegalityStatus } from '../../types/card';
+import { Card, CardRarity, LegalityStatus } from '../../types/card';
+
+/** Rarezas conocidas de Scryfall que mapeamos directamente */
+const VALID_RARITIES: ReadonlySet<string> = new Set<string>([
+  'common', 'uncommon', 'rare', 'mythic', 'special', 'bonus',
+]);
+
+/** Normaliza un string de rareza de Scryfall al tipo CardRarity */
+function normalizeCardRarity(rarity: string | undefined): CardRarity {
+  if (rarity && VALID_RARITIES.has(rarity)) return rarity as CardRarity;
+  return 'common';
+}
 
 /**
  * Mapeador de datos: Convierte la respuesta cruda de Scryfall al modelo de dominio limpio `Card`.
@@ -79,7 +90,7 @@ export function mapScryfallCardToDomain(scryfallCard: ScryfallCard): Card {
     oracleText,
     colors: scryfallCard.colors || [],
     colorIdentity: scryfallCard.color_identity || [],
-    rarity: scryfallCard.rarity || 'common',
+    rarity: normalizeCardRarity(scryfallCard.rarity),
     setName: scryfallCard.set_name || '',
     setCode: scryfallCard.set || '',
     collectorNumber: scryfallCard.collector_number || '',

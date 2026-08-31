@@ -12,8 +12,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { scryfallClient, mapScryfallCardToDomain, ScryfallError } from '../services/scryfall';
+import { scryfallClient, mapScryfallCardToDomain } from '../services/scryfall';
 import { FilterState } from '../types/filters';
+import { handleApiError } from '../utils/errorHandler';
 import {
   DEFAULT_CATALOG_QUERY,
   FEATURED_QUERY,
@@ -202,11 +203,8 @@ export function useCardSearch(initialFilters: FilterState): UseCardSearchReturn 
           setErrorMessage('No se encontraron cartas que coincidan con la búsqueda.');
         }
       } catch (err: unknown) {
-        if (err instanceof ScryfallError) {
-          setErrorMessage(err.message);
-        } else {
-          setErrorMessage('Error al realizar la búsqueda en Scryfall.');
-        }
+        const { message } = handleApiError(err, 'Error al realizar la búsqueda en Scryfall.');
+        setErrorMessage(message);
         setCatalogCards([]);
         setHasMore(false);
         setNextPageUrl(null);
@@ -257,11 +255,8 @@ export function useCardSearch(initialFilters: FilterState): UseCardSearchReturn 
       setSearchQuery(domainCard.name);
       return domainCard;
     } catch (err: unknown) {
-      if (err instanceof ScryfallError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Error al obtener una carta aleatoria.');
-      }
+      const { message } = handleApiError(err, 'Error al obtener una carta aleatoria.');
+      setErrorMessage(message);
       return null;
     } finally {
       setIsLoading(false);
@@ -280,11 +275,8 @@ export function useCardSearch(initialFilters: FilterState): UseCardSearchReturn 
       setCurrentCard(domain);
       return domain;
     } catch (err: unknown) {
-      if (err instanceof ScryfallError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Error al cargar la carta seleccionada.');
-      }
+      const { message } = handleApiError(err, 'Error al cargar la carta seleccionada.');
+      setErrorMessage(message);
       return null;
     } finally {
       setIsLoading(false);

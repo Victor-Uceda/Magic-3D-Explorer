@@ -599,3 +599,210 @@
   padding: 0.75rem 1.15rem;
   border-top: 1px solid var(--border-subtle);
 }
+
+/* ==========================================================================
+   Advanced Filters Modal & FilterSection Component
+   ========================================================================== */
+
+.advanced-filters-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.advanced-filters-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-dropdown);
+  animation: fadeIn 0.2s ease;
+}
+
+.advanced-filters-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.advanced-filters-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.advanced-filters-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.03em;
+}
+
+.advanced-filters-count {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--gold-primary);
+  color: #0f1013;
+  font-weight: 800;
+}
+
+.advanced-filters-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.advanced-filters-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.advanced-filters-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: rgba(15, 16, 19, 0.7);
+}
+
+.advanced-filters-reset-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s;
+}
+
+.advanced-filters-reset-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.advanced-filters-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.advanced-filters-cancel-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.advanced-filters-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.advanced-filters-apply-btn {
+  background: linear-gradient(135deg, #d4af37 0%, #aa8222 100%);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1.25rem;
+  color: #0f1013;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.advanced-filters-apply-btn:hover {
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.5);
+}
+
+/* FilterSection Component */
+.filter-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.filter-section-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filter-option-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.filter-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.filter-option-btn--active {
+  color: #f1f5f9;
+}
+
+/* Responsive: filters as drawer on mobile */
+@media (max-width: 480px) {
+  .advanced-filters-panel {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    height: 100%;
+  }
+
+  .advanced-filters-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .booster-pack-ready-hud {
+    bottom: 1.5rem;
+  }
+
+  .booster-open-btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.82rem;
+  }
+}
+

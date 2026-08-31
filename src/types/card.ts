@@ -31,6 +31,9 @@ export interface CardImageUris {
   borderCrop: string;
 }
 
+/** Rarezas estándar de MTG + variantes especiales de Scryfall */
+export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic' | 'special' | 'bonus';
+
 export interface Card {
   id: string;
   name: string;
@@ -40,7 +43,7 @@ export interface Card {
   oracleText: string;
   colors?: string[];
   colorIdentity?: string[];
-  rarity: string;
+  rarity: CardRarity;
   setName: string;
   setCode: string;
   collectorNumber: string;

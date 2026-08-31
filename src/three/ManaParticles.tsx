@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { PARTICLE_CONSTANTS } from '../constants/card3D';
 
 interface ManaParticlesProps {
   color?: string;
@@ -9,7 +10,7 @@ interface ManaParticlesProps {
 
 export const ManaParticles: React.FC<ManaParticlesProps> = ({
   color = '#b8964e',
-  count = 60,
+  count = PARTICLE_CONSTANTS.DEFAULT_COUNT,
 }) => {
   const pointsRef = useRef<THREE.Points>(null);
 
@@ -19,18 +20,18 @@ export const ManaParticles: React.FC<ManaParticlesProps> = ({
 
     for (let i = 0; i < count; i++) {
       // Distribución cilíndrica alrededor de la carta
-      const radius = 1.8 + Math.random() * 2.2;
+      const radius = PARTICLE_CONSTANTS.RADIUS_MIN + Math.random() * PARTICLE_CONSTANTS.RADIUS_RANGE;
       const theta = Math.random() * Math.PI * 2;
-      const y = (Math.random() - 0.5) * 5;
+      const y = (Math.random() - 0.5) * PARTICLE_CONSTANTS.VERTICAL_RANGE;
 
       pos[i * 3] = Math.cos(theta) * radius;
       pos[i * 3 + 1] = y;
       pos[i * 3 + 2] = Math.sin(theta) * radius;
 
       // Velocidad suave de flotación
-      spd[i * 3] = (Math.random() - 0.5) * 0.2;
-      spd[i * 3 + 1] = 0.15 + Math.random() * 0.35; // Deriva ascendente sutil
-      spd[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+      spd[i * 3] = (Math.random() - 0.5) * PARTICLE_CONSTANTS.LATERAL_SPEED_RANGE;
+      spd[i * 3 + 1] = PARTICLE_CONSTANTS.DRIFT_SPEED_MIN + Math.random() * PARTICLE_CONSTANTS.DRIFT_SPEED_RANGE;
+      spd[i * 3 + 2] = (Math.random() - 0.5) * PARTICLE_CONSTANTS.LATERAL_SPEED_RANGE;
     }
 
     return [pos, spd];
@@ -46,12 +47,12 @@ export const ManaParticles: React.FC<ManaParticlesProps> = ({
       array[i * 3 + 1] += speeds[i * 3 + 1] * delta;
 
       // Oscilación suave
-      array[i * 3] += Math.sin(array[i * 3 + 1] * 2) * 0.003;
-      array[i * 3 + 2] += Math.cos(array[i * 3 + 1] * 2) * 0.003;
+      array[i * 3] += Math.sin(array[i * 3 + 1] * 2) * PARTICLE_CONSTANTS.OSCILLATION_INTENSITY;
+      array[i * 3 + 2] += Math.cos(array[i * 3 + 1] * 2) * PARTICLE_CONSTANTS.OSCILLATION_INTENSITY;
 
       // Reubicar cuando exceda los límites verticales
-      if (array[i * 3 + 1] > 2.8) {
-        array[i * 3 + 1] = -2.8;
+      if (array[i * 3 + 1] > PARTICLE_CONSTANTS.VERTICAL_LIMIT) {
+        array[i * 3 + 1] = -PARTICLE_CONSTANTS.VERTICAL_LIMIT;
       }
     }
 
@@ -86,11 +87,11 @@ export const ManaParticles: React.FC<ManaParticlesProps> = ({
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.12}
+        size={PARTICLE_CONSTANTS.POINT_SIZE}
         color={color}
         map={particleTexture}
         transparent
-        opacity={0.65}
+        opacity={PARTICLE_CONSTANTS.OPACITY}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />

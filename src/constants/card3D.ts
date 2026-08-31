@@ -28,6 +28,33 @@ export const ANIMATION_CONSTANTS = {
   AUTO_ROTATE_SPEED: 0.8,
 } as const;
 
+export const PARTICLE_CONSTANTS = {
+  /** Cantidad de partículas por defecto (desktop) */
+  DEFAULT_COUNT: 50,
+  /** Cantidad reducida para dispositivos móviles */
+  MOBILE_COUNT: 20,
+  /** Radio mínimo de distribución cilíndrica */
+  RADIUS_MIN: 1.8,
+  /** Rango adicional de radio (se suma al mínimo) */
+  RADIUS_RANGE: 2.2,
+  /** Rango vertical total de distribución (± mitad) */
+  VERTICAL_RANGE: 5.0,
+  /** Límite vertical para reciclaje de partículas */
+  VERTICAL_LIMIT: 2.8,
+  /** Tamaño visual de cada partícula */
+  POINT_SIZE: 0.12,
+  /** Opacidad base de las partículas */
+  OPACITY: 0.65,
+  /** Velocidad mínima de deriva ascendente */
+  DRIFT_SPEED_MIN: 0.15,
+  /** Rango adicional de velocidad de deriva */
+  DRIFT_SPEED_RANGE: 0.35,
+  /** Amplitud de oscilación lateral */
+  LATERAL_SPEED_RANGE: 0.2,
+  /** Intensidad de oscilación sinusoidal */
+  OSCILLATION_INTENSITY: 0.003,
+} as const;
+
 export const TEXTURE_URLS = {
   /** URL oficial del reverso clásico de cartas Magic: The Gathering en alta resolución */
   OFFICIAL_MTG_CARD_BACK: 'https://backs.scryfall.io/large/5/9/597b79b3-7d77-4261-871a-60dd17403388.jpg',

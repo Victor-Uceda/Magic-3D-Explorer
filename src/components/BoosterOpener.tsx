@@ -6,21 +6,11 @@ import { scryfallClient, ScryfallSet } from '../services/scryfall';
 import { BoosterHeader } from './booster/BoosterHeader';
 import { BoosterControls } from './booster/BoosterControls';
 import { BoosterSummaryModal } from './booster/BoosterSummaryModal';
+import { POPULAR_SETS, BOOSTER_ANIMATION } from '../constants/booster';
+import { handleApiError } from '../utils/errorHandler';
 import type { Card } from '../types/card';
 
-// Curated list of premier booster sets for quick selection
-const POPULAR_SETS: { code: string; name: string }[] = [
-  { code: 'mh3', name: 'Modern Horizons 3' },
-  { code: 'fdn', name: 'Foundations' },
-  { code: 'otj', name: 'Outlaws of Thunder Junction' },
-  { code: 'mkm', name: 'Murders at Karlov Manor' },
-  { code: 'lci', name: 'The Lost Caverns of Ixalan' },
-  { code: 'woe', name: 'Wilds of Eldraine' },
-  { code: 'mom', name: 'March of the Machine' },
-  { code: 'neo', name: 'Kamigawa: Neon Dynasty' },
-  { code: 'mh2', name: 'Modern Horizons 2' },
-  { code: '2xm', name: 'Double Masters' },
-];
+
 
 interface BoosterOpenerProps {
   onBackToViewer: () => void;
@@ -35,7 +25,7 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
   onAddToDeck,
   onAddAllToDeck,
 }) => {
-  const [availableSets, setAvailableSets] = useState<{ code: string; name: string }[]>(POPULAR_SETS);
+  const [availableSets, setAvailableSets] = useState<{ code: string; name: string }[]>([...POPULAR_SETS]);
   const [selectedSetCode, setSelectedSetCode] = useState<string>('mh3');
   const [selectedSetName, setSelectedSetName] = useState<string>('Modern Horizons 3');
   
@@ -57,7 +47,7 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
           const formatted = rawSets
             .map((s) => ({ code: s.code, name: s.name }))
             .filter((s) => s.name && s.code);
-          const merged = [...POPULAR_SETS];
+          const merged = [...POPULAR_SETS] as { code: string; name: string }[];
           formatted.forEach((item) => {
             if (!merged.some((m) => m.code === item.code)) {
               merged.push(item);
@@ -104,10 +94,11 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
         setRevealedIndices(new Set([0]));
         setIsCurrentCardRevealed(true);
         setIsLoadingPack(false);
-      }, 1100);
+      }, BOOSTER_ANIMATION.OPENING_DELAY_MS);
     } catch (err: unknown) {
       console.error(err);
-      setErrorMsg('No se pudo generar el sobre. Prueba con otro set.');
+      const { message } = handleApiError(err, 'No se pudo generar el sobre. Prueba con otro set.');
+      setErrorMsg(message);
       setPhase('pack-ready');
       setIsLoadingPack(false);
     }
@@ -194,61 +185,19 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
       />
 
       {/* Error notification */}
+      {/* Error notification */}
       {errorMsg && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '4.75rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(239, 68, 68, 0.25)',
-            border: '1px solid rgba(239, 68, 68, 0.5)',
-            color: '#fca5a5',
-            padding: '0.4rem 1rem',
-            borderRadius: '9999px',
-            fontSize: '0.78rem',
-            zIndex: 45,
-          }}
-        >
-          {errorMsg}
-        </div>
+        <div className="booster-error-toast">{errorMsg}</div>
       )}
 
       {/* Phase 1: Pack Ready HUD */}
       {phase === 'pack-ready' && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '2.5rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.75rem',
-            zIndex: 35,
-          }}
-        >
+        <div className="booster-pack-ready-hud">
           <button
             type="button"
             onClick={handleOpenPack}
             disabled={isLoadingPack}
-            style={{
-              background: '#1e2434',
-              color: '#f8fafc',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-              borderRadius: '9999px',
-              padding: '0.75rem 2rem',
-              fontSize: '0.92rem',
-              fontWeight: 700,
-              letterSpacing: '0.04em',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
-              transition: 'all 0.18s ease',
-            }}
+            className="booster-open-btn"
           >
             {isLoadingPack ? (
               <>
@@ -262,7 +211,7 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
               </>
             )}
           </button>
-          <span style={{ fontSize: '0.75rem', color: '#64748b', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+          <span className="booster-open-hint">
             Haz clic para abrir el paquete
           </span>
         </div>

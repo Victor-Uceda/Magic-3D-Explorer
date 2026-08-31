@@ -5,6 +5,8 @@ import CameraController from './CameraController';
 import Card3D, { CardFinish } from './Card3D';
 import ManaParticles from './ManaParticles';
 import { getManaAuraColor } from '../utils/manaColors';
+import { PARTICLE_CONSTANTS } from '../constants/card3D';
+import { useResponsive } from '../hooks/useMediaQuery';
 import type { Card } from '../types/card';
 
 export interface SceneProps {
@@ -35,6 +37,10 @@ export const Scene: React.FC<SceneProps> = ({
     () => getManaAuraColor(card?.colors || card?.colorIdentity),
     [card?.colors, card?.colorIdentity]
   );
+
+  // Partículas adaptativas según el tamaño de pantalla
+  const { isMobile } = useResponsive();
+  const particleCount = isMobile ? PARTICLE_CONSTANTS.MOBILE_COUNT : PARTICLE_CONSTANTS.DEFAULT_COUNT;
 
   return (
     <div
@@ -70,7 +76,7 @@ export const Scene: React.FC<SceneProps> = ({
           <Lighting manaAuraColor={manaAuraColor} />
 
           {/* Partículas ambientales de maná etéreo */}
-          {enableParticles && <ManaParticles color={manaAuraColor} count={50} />}
+          {enableParticles && <ManaParticles color={manaAuraColor} count={particleCount} />}
 
           {/* Modelo 3D de la carta con acabado interactivo (Normal / Foil / Etched) */}
           <Card3D

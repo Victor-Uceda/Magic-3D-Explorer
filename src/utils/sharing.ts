@@ -95,7 +95,7 @@ export function decodeSharedDeck(encoded: string): DeckItem | null {
         oracleText: '',
         colors: [],
         colorIdentity: [],
-        rarity: item.r || 'rare',
+        rarity: (['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus'].includes(item.r ?? '') ? item.r : 'rare') as Card['rarity'],
         setName: 'Shared Deck Set',
         setCode: item.s || 'mtg',
         collectorNumber: item.cn || '1',
