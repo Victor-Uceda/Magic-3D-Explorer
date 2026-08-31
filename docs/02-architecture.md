@@ -149,3 +149,22 @@ flowchart TD
    - **Normal**: `MeshStandardMaterial` con rugosidad calculada.
    - **Foil**: `MeshPhysicalMaterial` con iridiscencia espectral (IOR 1.45, rango 140-500nm).
    - **Etched**: `MeshPhysicalMaterial` con micro-relieve metálico (rugosidad 0.38, metalicidad 0.7).
+
+---
+
+## 🛡️ Matriz de Auditoría y Solución de Problemas Identificados
+
+A continuación se detalla la resolución técnica aplicada a los 10 puntos auditados del sistema:
+
+| # | Problema Auditado | Diagnóstico Inicial | Solución Técnica Implementada | Módulos / Archivos Involucrados |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **App.tsx "Componente Dios"** | Exceso de `useState`, `useEffect` sin dependencias y mezcla de responsabilidades. | Extracción y desacoplamiento en 9 Custom Hooks especializados (`useCardSearch`, `useCardFilters`, `useDecks`, `useStudio3D`, etc.). `App.tsx` quedó reducido a un orquestador declarativo y limpio. | `src/App.tsx`<br>`src/hooks/*` |
+| **2** | **Routing Obsoleto** | Navegación basada en variables de estado (`appMode`) sin rutas bookmarkables. | Implementación completa de **React Router DOM v7** con URLs canónicas (`/catalog`, `/card/:id`, `/decks`, `/deck-3d/:deckId?`, `/collection`, `/booster`), soporte para botón Atrás/Adelante y deep linking con payload (`?deck=...`). | `src/App.tsx`<br>`src/types/navigation.ts`<br>`vercel.json` |
+| **3** | **Estado Derivado sin Memoization** | Recálculos en render inline (`activeFilterCount`, resúmenes de búsqueda). | Todos los cómputos derivados fueron envueltos en `useMemo` y funciones memorizadas con `useCallback` para evitar re-renderizados innecesarios del árbol. | `src/hooks/useCardFilters.ts`<br>`src/hooks/useCardSearch.ts`<br>`src/pages/Deck3DPage.tsx` |
+| **4** | **Riesgo de Fuga en Event Listeners** | `window.addEventListener('keydown')` dispersos sin garantías de ciclo de vida. | Centralización en el hook `useGlobalHotkeys`, que registra los listeners de atajos globales y garantiza su remoción limpia (`removeEventListener`) en la función de limpieza de `useEffect`. | `src/hooks/useGlobalHotkeys.ts` |
+| **5** | **Magic Numbers Esparcidos** | Dimensiones 3D, velocidades de lerp y timeouts de red sin nombres ni contexto. | Centralización formal en constantes inmutables en `src/constants/card3D.ts` (`CARD_DIMENSIONS`, `ANIMATION_CONSTANTS`, `TEXTURE_URLS`) y `src/constants/scryfall.ts` (`SCRYFALL_CONFIG`). | `src/constants/card3D.ts`<br>`src/constants/scryfall.ts` |
+| **6** | **Type Assertions `as any`** | Casteos no seguros en el simulador de sobres y modelos de datos. | 0 ocurrencias de `any`. Se introdujo la función `normalizeBoosterRarity()` y tipos de unión estrictos para rarezas MTG (`'common' \| 'uncommon' \| 'rare' \| 'mythic'`). | `src/services/boosterSimulator.ts`<br>`src/types/card.ts` |
+| **7** | **Persistencia y Favoritos en Firestore** | Interfaces declaradas pero sin sincronización real con la nube. | Integración completa de **Firebase Authentication** y **Cloud Firestore** (`firestoreService.ts`), con sincronización reactiva en tiempo real (`subscribeToCloudDecks`) y soporte offline/anónimo mediante `LocalStorageCardRepository`. | `src/services/firebase/*`<br>`src/services/storage/*`<br>`src/hooks/useFavorites.ts` |
+| **8** | **Manejo de Errores Inconsistente** | Capturas de error genéricas y falta de tipado en excepciones de red. | Jerarquía formal `ScryfallError` (con códigos 404, 429, 500), protección perimetral con `ErrorBoundary` para WebGL y notificaciones flotantes con `useToast`. | `src/services/scryfall/errors.ts`<br>`src/components/common/ErrorBoundary.tsx` |
+| **9** | **Efectos Demo y Partículas en Exceso** | Sobrecarga de partículas activadas por defecto y aspecto de "videojuego". | Partículas desactivadas por defecto (`enableParticles: false`), iluminación física de estudio sobria y paleta noble mate MTG (grafito, pizarra y oro `#c5a059`), orientada a un visor técnico y analítico profesional. | `src/three/ManaParticles.tsx`<br>`src/three/Lighting.tsx`<br>`src/styles/variables.css` |
+| **10** | **Diseño Responsivo y Breakpoints** | Falta de adaptabilidad programática en pantallas móviles y 3D. | Creación de los hooks `useMediaQuery` y `useResponsive` (`isMobile`, `isTablet`, `isDesktop`), junto con arquitectura CSS modular en `src/styles/base.css` y `src/styles/catalog.css` con soporte para drawers móviles y layouts fluidos. | `src/hooks/useMediaQuery.ts`<br>`src/styles/base.css`<br>`src/styles/catalog.css` |
