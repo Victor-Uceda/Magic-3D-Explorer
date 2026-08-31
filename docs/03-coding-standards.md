@@ -1,15 +1,5 @@
 # Coding Standards
 
-> [!CAUTION]
-> **REGLA ESTRICTA DE DISEÑO Y COLOR (3X):**
-> 1. NO QUIERO COLORES NEON
-> 2. NO QUIERO COLORES NEON
-> 3. NO QUIERO COLORES NEON
->
-> Prohibidos terminantemente los amarillos brillantes, verdes fluorescentes, cianes intensos o botones amarillos chillones. Toda la paleta debe ser sobria, oscura y elegante (grafito, pizarra, humo y acentos en oro/bronce mate tenue `#c5a059`).
-
----
-
 ## 1. Principios Fundamentales
 * **Simplicidad y claridad para exposición**: El código debe ser autoexplicativo, legible y fácil de defender en una presentación técnica.
 * **KISS (Keep It Simple, Stupid)**: Priorizar siempre la solución más directa y limpia sin introducir capas artificiales o sobreingeniería.

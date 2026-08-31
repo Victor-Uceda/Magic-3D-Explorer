@@ -8,6 +8,7 @@ const OFFICIAL_MTG_CARD_BACK_URL = 'https://backs.scryfall.io/large/5/9/597b79b3
 const textureCache = new Map<string, THREE.Texture>();
 
 function getCardTexture(url: string): THREE.Texture {
+  if (!url) return getCardBackTexture();
   if (textureCache.has(url)) {
     return textureCache.get(url)!;
   }
@@ -59,8 +60,8 @@ function createCardFaceGeometry(w: number, h: number, r: number): THREE.BufferGe
 
 interface SingleCascadeCardProps {
   card: Card;
-  relativeIndex: number;
-  total: number;
+  offset: number;
+  totalVisible: number;
   isFrontCard: boolean;
   isSpread: boolean;
   isCascading: boolean;
@@ -69,8 +70,8 @@ interface SingleCascadeCardProps {
 
 const SingleCascadeCard: React.FC<SingleCascadeCardProps> = ({
   card,
-  relativeIndex,
-  total,
+  offset,
+  totalVisible,
   isFrontCard,
   isSpread,
   isCascading,
@@ -79,10 +80,8 @@ const SingleCascadeCard: React.FC<SingleCascadeCardProps> = ({
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
-  const frontTexture = useMemo(
-    () => getCardTexture(card.imageUris.normal || card.imageUris.small),
-    [card]
-  );
+  const imgUrl = card?.imageUris?.normal || card?.imageUris?.small || card?.imageUris?.large || '';
+  const frontTexture = useMemo(() => getCardTexture(imgUrl), [imgUrl]);
   const backTexture = useMemo(() => getCardBackTexture(), []);
 
   const cardGeometry = useMemo(() => createCardFaceGeometry(2.5, 3.5, 0.12), []);
@@ -101,24 +100,46 @@ const SingleCascadeCard: React.FC<SingleCascadeCardProps> = ({
     let targetRotZ = 0;
 
     if (isSpread) {
-      // Abanico en cascada fluido
-      const progress = total > 1 ? relativeIndex / (total - 1) : 0;
-      const spreadWidth = Math.min(total * 0.35, 14);
-      targetX = (progress - 0.5) * spreadWidth;
-      targetY = Math.sin(progress * Math.PI) * 0.6 - (relativeIndex * 0.01);
-      targetZ = -Math.cos(progress * Math.PI) * 1.5 - (relativeIndex * 0.04);
-      targetRotX = 0.1;
-      targetRotY = (progress - 0.5) * -0.35;
-      targetRotZ = (progress - 0.5) * -0.2;
+      // Abanico 3D centrado en la carta activa (offset 0)
+      const spacing = totalVisible <= 3 ? 1.65 : totalVisible <= 7 ? 1.25 : Math.max(0.65, 12 / totalVisible);
+      targetX = offset * spacing;
+
+      if (isFrontCard) {
+        // Carta activa: elevada al frente y en el centro
+        targetY = 0.32;
+        targetZ = 0.95;
+        targetRotX = 0.06;
+        targetRotY = 0;
+        targetRotZ = 0;
+
+        if (hovered) {
+          targetY = 0.48;
+          targetZ = 1.25;
+        }
+      } else {
+        // Cartas laterales: curvadas suavemente hacia atrás en profundidad
+        const absOffset = Math.abs(offset);
+        targetY = -absOffset * 0.05 - Math.pow(offset * 0.12, 2) * 0.12;
+        targetZ = -absOffset * 0.32;
+        targetRotX = 0.08;
+        targetRotY = -offset * 0.07;
+        targetRotZ = -offset * 0.045;
+
+        if (hovered) {
+          targetY += 0.22;
+          targetZ += 0.35;
+        }
+      }
 
       if (isCascading) {
-        const wavePhase = time * 2.5 - relativeIndex * 0.22;
-        targetY += Math.sin(wavePhase) * 0.3;
-        targetZ += Math.cos(wavePhase) * 0.2;
-        targetRotZ += Math.sin(wavePhase) * 0.06;
+        const wavePhase = time * 2.6 + offset * 0.35;
+        const waveAmpY = isFrontCard ? 0.1 : 0.16;
+        targetY += Math.sin(wavePhase) * waveAmpY;
+        targetZ += Math.cos(wavePhase) * 0.08;
+        targetRotZ += Math.sin(wavePhase) * 0.025;
       }
     } else {
-      // Pila de mazo 3D interactiva (Solitario): La carta activa está de frente
+      // Pila de mazo 3D (Solitario): La carta activa (offset 0) está en la cima
       if (isFrontCard) {
         targetX = 0;
         targetY = 0;
@@ -128,22 +149,22 @@ const SingleCascadeCard: React.FC<SingleCascadeCardProps> = ({
         targetRotZ = 0;
 
         if (hovered) {
-          targetY = 0.2;
-          targetZ = 0.9;
+          targetY = 0.25;
+          targetZ = 0.95;
         }
       } else {
-        // Cartas en la pila detrás de la frontal
-        const depthIdx = Math.min(relativeIndex, 25);
-        targetX = Math.sin(depthIdx * 0.4) * 0.08;
-        targetY = depthIdx * 0.02;
-        targetZ = -depthIdx * 0.12;
+        // Cartas en la pila debajo de la activa
+        const depth = Math.min(offset, 25);
+        targetX = Math.sin(depth * 0.45) * 0.06;
+        targetY = -depth * 0.01;
+        targetZ = -depth * 0.07;
         targetRotX = 0;
         targetRotY = 0;
-        targetRotZ = (depthIdx % 2 === 0 ? 1 : -1) * 0.02;
+        targetRotZ = (depth % 2 === 0 ? 1 : -1) * 0.018;
       }
     }
 
-    const lerpSpeed = isFrontCard ? 14 : 8;
+    const lerpSpeed = isFrontCard ? 14 : 9;
     groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, delta * lerpSpeed);
     groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, delta * lerpSpeed);
     groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, delta * lerpSpeed);
@@ -169,19 +190,23 @@ const SingleCascadeCard: React.FC<SingleCascadeCardProps> = ({
     onCardClick();
   };
 
+  const scaleValue = isFrontCard
+    ? (hovered ? 1.09 : 1.05)
+    : (hovered ? 1.03 : 0.98);
+
   return (
     <group
       ref={groupRef}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
       onClick={handleClick}
-      scale={hovered && isFrontCard ? [1.06, 1.06, 1.06] : [1, 1, 1]}
+      scale={[scaleValue, scaleValue, scaleValue]}
     >
       {/* Front Face */}
       <mesh geometry={cardGeometry} position={[0, 0, 0.011]}>
         <meshStandardMaterial
           map={frontTexture}
-          roughness={0.25}
+          roughness={isFrontCard ? 0.2 : 0.3}
           metalness={0.15}
           side={THREE.FrontSide}
         />
@@ -199,7 +224,11 @@ const SingleCascadeCard: React.FC<SingleCascadeCardProps> = ({
 
       {/* Core Card Edge */}
       <mesh geometry={edgeGeometry} position={[0, 0, 0]}>
-        <meshStandardMaterial color="#0f1013" roughness={0.7} />
+        <meshStandardMaterial
+          color={isFrontCard ? '#d4af37' : '#0f1013'}
+          roughness={isFrontCard ? 0.4 : 0.7}
+          metalness={isFrontCard ? 0.3 : 0}
+        />
       </mesh>
     </group>
   );
@@ -222,41 +251,78 @@ export const DeckCascade3D: React.FC<DeckCascade3DProps> = ({
   onCycleNext,
   onSelectCardDirect,
 }) => {
-  // Límite de 40 cartas para rendering 60 FPS
   const total = cards.length;
-  const displayCount = Math.min(total, 40);
 
-  // Ordenar cartas para que la activa esté al frente (relative index 0)
-  const orderedCards = useMemo(() => {
-    const list: Array<{ card: Card; relativeIndex: number; originalIndex: number }> = [];
-    for (let i = 0; i < displayCount; i++) {
-      const origIdx = (activeCardIndex + i) % total;
-      list.push({
-        card: cards[origIdx],
-        relativeIndex: i,
-        originalIndex: origIdx,
-      });
+  // Calculamos las cartas a renderizar centrando en la carta activa
+  const displayCards = useMemo(() => {
+    if (total === 0) return [];
+
+    if (isSpread) {
+      // Modo Abanico: Centrado en activeCardIndex (offset 0)
+      const maxCount = Math.min(total, 17);
+      const half = Math.floor(maxCount / 2);
+      const items: Array<{
+        card: Card;
+        offset: number;
+        actualIndex: number;
+        sortZ: number;
+      }> = [];
+
+      for (let o = -half; o <= half; o++) {
+        if (maxCount < total || (o >= -Math.floor((total - 1) / 2) && o <= Math.ceil((total - 1) / 2))) {
+          const actualIndex = ((activeCardIndex + o) % total + total) % total;
+          const card = cards[actualIndex];
+          if (card) {
+            // sortZ: menor Z se dibuja primero; la carta activa (offset 0) tiene el mayor sortZ y se dibuja al final
+            const sortZ = o === 0 ? 999 : -Math.abs(o);
+            items.push({ card, offset: o, actualIndex, sortZ });
+          }
+        }
+      }
+
+      // Ordenar de menor sortZ a mayor sortZ para que el render respete capas y la carta activa quede siempre al frente
+      return items.sort((a, b) => a.sortZ - b.sortZ);
+    } else {
+      // Modo Pila (Solitario): La carta activa está en offset 0 (cima), las siguientes debajo
+      const displayCount = Math.min(total, 25);
+      const items: Array<{
+        card: Card;
+        offset: number;
+        actualIndex: number;
+        sortZ: number;
+      }> = [];
+
+      for (let i = 0; i < displayCount; i++) {
+        const actualIndex = (activeCardIndex + i) % total;
+        const card = cards[actualIndex];
+        if (card) {
+          const sortZ = i === 0 ? 999 : -i;
+          items.push({ card, offset: i, actualIndex, sortZ });
+        }
+      }
+
+      return items.sort((a, b) => a.sortZ - b.sortZ);
     }
-    // Renderizar de atrás hacia adelante para que el z-index de Three.js respete transparencias
-    return list.reverse();
-  }, [cards, activeCardIndex, total, displayCount]);
+  }, [cards, activeCardIndex, isSpread, total]);
+
+  if (total === 0) return null;
 
   return (
     <group position={[0, 0, 0]}>
-      {orderedCards.map((item) => (
+      {displayCards.map((item) => (
         <SingleCascadeCard
-          key={`${item.card.id}-${item.originalIndex}`}
+          key={`${item.card.id}-${item.actualIndex}-${item.offset}`}
           card={item.card}
-          relativeIndex={item.relativeIndex}
-          total={displayCount}
-          isFrontCard={item.relativeIndex === 0}
+          offset={item.offset}
+          totalVisible={displayCards.length}
+          isFrontCard={item.offset === 0}
           isSpread={isSpread}
           isCascading={isCascading}
           onCardClick={() => {
-            if (item.relativeIndex === 0 || !isSpread) {
+            if (item.offset === 0 || !isSpread) {
               onCycleNext();
             } else {
-              onSelectCardDirect(item.originalIndex);
+              onSelectCardDirect(item.actualIndex);
             }
           }}
         />

@@ -28,10 +28,6 @@
    - Colección de cartas favoritas con persistencia local (*LocalStorage*).
 
 5. **Identidad Visual Noble & Cero Neón**:
-   > [!CAUTION]
-   > **REGLA ESTRICTA DE DISEÑO Y COLOR (3X):**
-   > 1. NO QUIERO COLORES NEON
-   > 2. NO QUIERO COLORES NEON
-   > 3. NO QUIERO COLORES NEON
+  
    - Paleta de colores sobria y elegante: grafito, pizarra oscura, humo y acentos en oro mate apagado (`#c5a059`).
    - Todos los precios cotizados exclusivamente en Soles peruanos (`S/.`) con tasa de cambio centralizada (`USD_TO_PEN_RATE = 3.75`).

@@ -62,7 +62,8 @@ export const Deck3DPage: React.FC<Deck3DPageProps> = ({
   }, [deck]);
 
   const totalCardsCount = expandedCards.length;
-  const activeCard = expandedCards[activeCardIndex] || expandedCards[0] || null;
+  const safeActiveIndex = totalCardsCount > 0 ? ((activeCardIndex % totalCardsCount) + totalCardsCount) % totalCardsCount : 0;
+  const activeCard = expandedCards[safeActiveIndex] || null;
 
   const totalDeckValueUSD = useMemo(() => {
     return deck.cards.reduce((sum, item) => {
@@ -127,7 +128,7 @@ export const Deck3DPage: React.FC<Deck3DPageProps> = ({
           {totalCardsCount > 0 && (
             <DeckCascade3D
               cards={expandedCards}
-              activeCardIndex={activeCardIndex}
+              activeCardIndex={safeActiveIndex}
               isCascading={isCascading}
               isSpread={isSpread}
               onCycleNext={handleCycleNext}
@@ -226,7 +227,7 @@ export const Deck3DPage: React.FC<Deck3DPageProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '0.04em' }}>
-              CARTA {activeCardIndex + 1} DE {totalCardsCount}
+              CARTA {safeActiveIndex + 1} DE {totalCardsCount}
             </span>
             {activeCard.manaCost && (
               <ManaCost manaCost={activeCard.manaCost} size={15} />

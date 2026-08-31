@@ -1,15 +1,5 @@
 # AI Development Agent Instructions
 
-> [!CAUTION]
-> **REGLA ESTRICTA DE DISEÑO Y COLOR (3X):**
-> 1. NO QUIERO COLORES NEON
-> 2. NO QUIERO COLORES NEON
-> 3. NO QUIERO COLORES NEON
->
-> Prohibidos terminantemente los amarillos brillantes, verdes fluorescentes, cianes intensos o botones amarillos chillones. Toda la paleta debe ser sobria, oscura y elegante (grafito, pizarra, humo y acentos en oro/bronce mate tenue `#c5a059`).
-
----
-
 ## 🤖 Protocolo de Desarrollo para el Agente IA
 
 1. **Inspección antes de editar**: Revisar siempre el código existente, contratos de interfaces y convenciones antes de realizar cambios.
