@@ -34,6 +34,7 @@ const BoosterOpener = React.lazy(() => import('./components/BoosterOpener'));
 
 // Utilidades y Tipos
 import { decodeSharedDeck } from './utils/sharing';
+import { defaultStorageRepository } from './services/storage/cardStorage';
 import { saveCloudDeck, deleteCloudDeck, subscribeToCloudDecks } from './services/firebase/firestoreService';
 import type { Card } from './types/card';
 import type { AppRoute } from './types/navigation';
@@ -137,13 +138,26 @@ export const App: React.FC = () => {
   // Sincronización automática en tiempo real con Cloud Firestore (Live Sync)
   useEffect(() => {
     if (!user || user.isAnonymous) {
-      if (!user) setDecks([]);
+      // Usuario no autenticado / anónimo: mantener los mazos locales del navegador
+      const localDecks = defaultStorageRepository.getDecks();
+      if (localDecks.length > 0) {
+        setDecks(localDecks);
+      }
       return;
     }
 
     // Escucha reactiva en vivo: cualquier cambio en la nube se refleja de inmediato
     const unsubscribe = subscribeToCloudDecks(user.uid, (cloudDecks) => {
-      setDecks(cloudDecks);
+      if (cloudDecks && cloudDecks.length > 0) {
+        setDecks(cloudDecks);
+      } else {
+        // Si el usuario en la nube aún no tiene mazos, sincronizar sus mazos locales hacia la nube
+        const localDecks = defaultStorageRepository.getDecks();
+        if (localDecks.length > 0) {
+          localDecks.forEach((d) => saveCloudDeck(user.uid, d).catch(console.warn));
+          setDecks(localDecks);
+        }
+      }
     });
 
     return () => unsubscribe();
