@@ -43,3 +43,4 @@ La documentación completa para entender y recrear el proyecto se encuentra en l
 * **[`04-features.md`](./docs/04-features.md)**: Especificación detallada de todas las funcionalidades.
 * **[`05-development-workflow.md`](./docs/05-development-workflow.md)**: Guía paso a paso para recrear el proyecto desde cero.
 * **[`06-ai-agent.md`](./docs/06-ai-agent.md)**: Protocolo de desarrollo para asistentes y agentes IA.
+* **[`07-ui-ux-design-system.md`](./docs/07-ui-ux-design-system.md)**: Sistema completo de diseño UI/UX, tokens, glassmorphism y atajos.

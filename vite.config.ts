@@ -21,6 +21,7 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           'vendor-icons': ['lucide-react'],
         },
       },

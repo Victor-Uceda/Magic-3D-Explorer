@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Compass, Share2, Box, Layers } from 'lucide-react';
+import { Plus, Compass, Link2, Check, Download, Box } from 'lucide-react';
 import { DeckSidebar } from '../components/deck/DeckSidebar';
 import { DeckStatsPanel } from '../components/deck/DeckStatsPanel';
 import { DeckCardList } from '../components/deck/DeckCardList';
 import { DeckCreateModal } from '../components/deck/DeckCreateModal';
 import { DeckExportModal } from '../components/deck/DeckExportModal';
 import { formatPricePEN } from '../utils/pricing';
+import { getDeckShareUrl } from '../utils/sharing';
 import type { Card } from '../types/card';
 import type { AppRoute } from '../types/navigation';
 
@@ -53,6 +54,7 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
 }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isCopiedShare, setIsCopiedShare] = useState(false);
   const [activeDeckId, setActiveDeckId] = useState<string | null>(decks[0]?.id || null);
 
   const activeDeck = useMemo(
@@ -80,6 +82,27 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
   }, [activeDeck]);
 
   const totalDeckValuePEN = formatPricePEN(totalDeckValueUSD.toFixed(2));
+
+  // Enlace directo de compartición
+  const deckShareUrl = useMemo(() => {
+    if (!activeDeck || activeDeck.cards.length === 0) return '';
+    try {
+      return getDeckShareUrl(activeDeck);
+    } catch {
+      return '';
+    }
+  }, [activeDeck]);
+
+  const handleCopyShareLink = async () => {
+    if (!deckShareUrl) return;
+    try {
+      await navigator.clipboard.writeText(deckShareUrl);
+      setIsCopiedShare(true);
+      setTimeout(() => setIsCopiedShare(false), 2200);
+    } catch (e) {
+      console.warn('Error al copiar enlace:', e);
+    }
+  };
 
   // Agrupación de cartas por tipo
   const groupedCategories = useMemo(() => {
@@ -120,7 +143,7 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
         <div>
           <h1 className="deck-page-title">Constructor & Analizador de Mazos</h1>
           <p className="deck-page-subtitle">
-            Crea estrategias, evalúa tu curva de maná, visualiza tu mazo en 3D y gestiona tus listas.
+            Crea estrategias, evalúa tu curva de maná, comparte tu lista y visualiza tu baraja en 3D.
           </p>
         </div>
 
@@ -156,25 +179,34 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
                     <h2>{activeDeck.name}</h2>
                     <span className="deck-format-badge">{activeDeck.format.toUpperCase()}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
                     <span
                       style={{
                         fontSize: '0.78rem',
                         fontWeight: 700,
                         color: totalCardsCount >= targetFormatCount ? '#10b981' : '#f59e0b',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
                       }}
                     >
                       {totalCardsCount} / {targetFormatCount} cartas
                     </span>
-                    <span style={{ color: '#64748b' }}>•</span>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--accent-gold)', fontFamily: 'var(--font-mono)' }}>
+                    <span
+                      style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        color: 'var(--accent-gold)',
+                        fontFamily: 'var(--font-mono)',
+                        background: 'rgba(197, 160, 89, 0.08)',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(197, 160, 89, 0.2)',
+                      }}
+                    >
                       Valor: {totalDeckValuePEN}
                     </span>
-                    {totalDeckValueUSD > 0 && (
-                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                        (${totalDeckValueUSD.toFixed(2)} USD)
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -182,9 +214,20 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
                 <div className="deck-action-buttons">
                   <button
                     type="button"
+                    onClick={handleCopyShareLink}
+                    disabled={!deckShareUrl}
+                    className={`deck-btn-secondary ${isCopiedShare ? 'copied' : ''}`}
+                    title="Copiar enlace directo 3D para compartir este mazo"
+                  >
+                    {isCopiedShare ? <Check size={14} /> : <Link2 size={14} color="var(--accent-gold)" />}
+                    <span>{isCopiedShare ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => onNavigate('catalog')}
                     className="deck-btn-secondary"
-                    title="Buscar cartas en el catálogo"
+                    title="Buscar cartas en el catálogo para incorporar"
                   >
                     <Compass size={14} />
                     <span>Agregar Cartas</span>
@@ -193,17 +236,17 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
                   <button
                     type="button"
                     className="deck-btn-secondary"
-                    title="Exportar mazo a portapapeles o archivo"
+                    title="Exportar mazo a formato texto o MTG Arena"
                     onClick={() => setIsExportModalOpen(true)}
                   >
-                    <Share2 size={14} />
+                    <Download size={14} />
                     <span>Exportar</span>
                   </button>
 
                   <button
                     type="button"
                     className="deck-btn-primary"
-                    title="Visualizar este mazo específico en 3D"
+                    title="Visualizar este mazo completo apilado en 3D"
                     onClick={() => {
                       if (onInspectDeck3D) {
                         onInspectDeck3D(activeDeck.id);
@@ -219,10 +262,29 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
                 </div>
               </div>
 
-              {/* Mana Curve & Deck Analytics */}
+              {/* Direct Share Link Display Banner */}
+              {deckShareUrl && (
+                <div className="deck-share-banner">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+                    <Link2 size={13} color="var(--accent-gold)" style={{ flexShrink: 0 }} />
+                    <span className="deck-share-url-text">{deckShareUrl}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyShareLink}
+                    className="deck-btn-secondary"
+                    style={{ padding: '0.3rem 0.6rem', fontSize: '0.72rem', flexShrink: 0 }}
+                  >
+                    {isCopiedShare ? <Check size={12} /> : <Link2 size={12} />}
+                    <span>{isCopiedShare ? 'Copiado' : 'Copiar'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Mana Curve and Stats */}
               <DeckStatsPanel deck={activeDeck} groupedCategories={groupedCategories} />
 
-              {/* Cards List Grouped by Type */}
+              {/* Card List grouped by type */}
               <DeckCardList
                 deckId={activeDeck.id}
                 groupedCategories={groupedCategories}
@@ -235,23 +297,32 @@ export const DeckBuilderPage: React.FC<DeckBuilderPageProps> = ({
             </div>
           ) : (
             <div className="deck-empty-state">
-              <Layers size={36} color="var(--text-muted)" />
-              <h3>Ningún mazo disponible</h3>
-              <p>Crea tu primer mazo para empezar.</p>
+              <Compass size={40} color="var(--text-muted)" />
+              <h3>No tienes ningún mazo seleccionado</h3>
+              <p>Selecciona un mazo en la barra lateral o crea uno nuevo para comenzar.</p>
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="btn-primary-action"
+              >
+                <Plus size={14} />
+                <span>Crear Primer Mazo</span>
+              </button>
             </div>
           )}
         </main>
       </div>
 
-      {/* Creation Modal */}
-      <DeckCreateModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreateDeck={onCreateDeck}
-      />
+      {/* Modals */}
+      {isCreateModalOpen && (
+        <DeckCreateModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreateDeck={onCreateDeck}
+        />
+      )}
 
-      {/* Export Modal */}
-      {activeDeck && (
+      {isExportModalOpen && activeDeck && (
         <DeckExportModal
           isOpen={isExportModalOpen}
           onClose={() => setIsExportModalOpen(false)}

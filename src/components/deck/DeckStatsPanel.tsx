@@ -18,7 +18,7 @@ export const DeckStatsPanel: React.FC<DeckStatsPanelProps> = ({
   deck,
   groupedCategories,
 }) => {
-  // Curva de maná (CMC 0, 1, 2, 3, 4, 5, 6, 7+)
+  // Curva de maná (CMC 0, 1, 2, 3, 4, 5, 6, 7+) excluyendo tierras
   const manaCurveData = useMemo(() => {
     const curve = [0, 0, 0, 0, 0, 0, 0, 0];
     for (const item of deck.cards) {
@@ -36,33 +36,50 @@ export const DeckStatsPanel: React.FC<DeckStatsPanelProps> = ({
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(255, 255, 255, 0.02)',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
         borderRadius: '12px',
-        padding: '0.85rem 1rem',
-        margin: '1rem 0',
+        padding: '0.9rem 1.1rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.6rem',
+        gap: '0.85rem',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Top Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            fontSize: '0.74rem',
+            gap: '0.45rem',
+            fontSize: '0.76rem',
             fontWeight: 700,
-            color: '#94a3b8',
+            color: 'var(--text-primary)',
           }}
         >
-          <BarChart3 size={14} color="var(--accent-gold)" />
-          <span>CURVA DE MANÁ (COSTE DE CONJUROS Y CRIATURAS)</span>
+          <BarChart3 size={15} color="var(--accent-gold)" />
+          <span>Curva de Coste de Maná (CMC)</span>
         </div>
-        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-          {groupedCategories.map((g) => `${g.label}: ${g.count}`).join(' • ')}
-        </span>
+
+        {/* Categories breakdown pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+          {groupedCategories.map((g) => (
+            <span
+              key={g.key}
+              style={{
+                fontSize: '0.66rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                padding: '0.1rem 0.45rem',
+                borderRadius: '6px',
+              }}
+            >
+              {g.label}: <strong style={{ color: '#f1f5f9' }}>{g.count}</strong>
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Histogram Bars */}
@@ -70,9 +87,9 @@ export const DeckStatsPanel: React.FC<DeckStatsPanelProps> = ({
         style={{
           display: 'flex',
           alignItems: 'flex-end',
-          gap: '0.6rem',
-          height: '65px',
-          paddingTop: '0.5rem',
+          gap: '0.65rem',
+          height: '75px',
+          paddingTop: '0.4rem',
         }}
       >
         {manaCurveData.map((count, cmc) => {
@@ -85,16 +102,17 @@ export const DeckStatsPanel: React.FC<DeckStatsPanelProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '0.2rem',
+                gap: '0.25rem',
                 height: '100%',
                 justifyContent: 'flex-end',
               }}
             >
               <span
                 style={{
-                  fontSize: '0.65rem',
+                  fontSize: '0.7rem',
                   fontWeight: 800,
-                  color: count > 0 ? '#f1f5f9' : '#475569',
+                  color: count > 0 ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.2)',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 {count}
@@ -102,16 +120,24 @@ export const DeckStatsPanel: React.FC<DeckStatsPanelProps> = ({
               <div
                 style={{
                   width: '100%',
-                  height: `${Math.max(heightPct, 4)}%`,
+                  height: `${Math.max(heightPct, 6)}%`,
                   background:
                     count > 0
-                      ? 'linear-gradient(180deg, var(--accent-gold) 0%, rgba(212,175,55,0.3) 100%)'
-                      : 'rgba(255,255,255,0.04)',
-                  borderRadius: '3px',
-                  transition: 'height 0.25s ease',
+                      ? 'linear-gradient(180deg, #c5a059 0%, rgba(197, 160, 89, 0.35) 100%)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: '4px',
+                  transition: 'height 0.2s ease',
+                  boxShadow: count > 0 ? '0 0 10px rgba(197, 160, 89, 0.2)' : 'none',
                 }}
               />
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b' }}>
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              >
                 {cmc === 7 ? '7+' : cmc}
               </span>
             </div>

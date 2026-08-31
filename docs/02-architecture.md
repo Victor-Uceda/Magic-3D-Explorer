@@ -68,11 +68,14 @@ src/
 │   ├── navigation/               # Barra de navegación principal y búsqueda
 │   │   ├── Navbar.tsx            # Navbar fija con logo, cápsula de búsqueda y atajos
 │   │   ├── SearchBar.tsx         # Barra de búsqueda con debounce y autocompletado en vivo
-│   │   └── NavLinks.tsx          # Enlaces directos a Inicio, Catálogo, Mazos, Colección y Sobres
+│   │   ├── NavLinks.tsx          # Enlaces directos a Inicio, Catálogo, Mazos, Colección y Sobres
+│   │   └── ProfileDropdown.tsx   # Menú flotante de perfil de usuario y métricas en la nube
 │   ├── booster/                  # Módulos del simulador de sobres 3D
 │   │   ├── BoosterHeader.tsx     # Selector de expansión y botón de retorno
 │   │   ├── BoosterControls.tsx   # Controles de paso a paso, volteo y progreso de 15 cartas
 │   │   └── BoosterSummaryModal.tsx # Cuadrícula final de 15 cartas con valor total en Soles
+│   ├── auth/                     # Autenticación y gestión de usuarios
+│   │   └── AuthModal.tsx         # Modal de inicio de sesión, registro, Google e Invitado
 │   ├── cards/                    # Componentes de cartas 2D
 │   │   ├── QuickViewModal.tsx    # Modal de previsualización rápida 2D
 │   │   └── CardVariantsModal.tsx # Modal de selección de ilustraciones y variantes históricas
@@ -99,6 +102,18 @@ src/
 │   ├── DeckBuilderPage.tsx       # Constructor de mazos con desglose por tipo
 │   ├── Deck3DPage.tsx            # Visualizador 3D de mazo apilado
 │   └── CollectionPage.tsx        # Colección de cartas favoritas persistidas
+├── services/                     # Capa de Servicios Externos
+│   ├── firebase/                 # Servicios Cloud de Firebase
+│   │   ├── firebaseConfig.ts     # Inicialización del SDK modular de Firebase
+│   │   ├── authService.ts        # Métodos de autenticación (Email, Google, Invitado)
+│   │   └── firestoreService.ts   # Sincronización de mazos y favoritos en Cloud Firestore
+│   ├── scryfall/                 # Integración oficial con API Scryfall
+│   │   ├── scryfallClient.ts     # Cliente HTTP con rate limit (80ms) y timeouts
+│   │   ├── cardMapper.ts         # Transformación de payloads crudos al modelo de dominio
+│   │   └── errors.ts             # Jerarquía de errores tipados (404, 429, Timeout)
+│   ├── storage/                  # Patrón Repository de Persistencia
+│   │   └── cardStorage.ts        # ICardStorageRepository y LocalStorageCardRepository
+│   └── boosterSimulator.ts       # Algoritmo probabilístico de sobres de Draft de 15 cartas
 └── utils/                        # Utilidades y funciones puras
     ├── pricing.ts                # Constante USD_TO_PEN_RATE (3.75) y formateo en Soles (S/.)
     ├── manaColors.ts             # Algoritmo de cálculo de auras cromáticas de maná

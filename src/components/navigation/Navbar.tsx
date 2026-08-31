@@ -6,12 +6,15 @@ import {
   BookOpen,
   Swords,
   Heart,
+  User as UserIcon,
   X,
   ExternalLink,
   Loader2,
 } from 'lucide-react';
 import { scryfallClient } from '../../services/scryfall';
+import { ProfileDropdown } from './ProfileDropdown';
 import type { AppRoute } from '../../types/navigation';
+import type { UserProfile } from '../../services/firebase/authService';
 
 interface NavbarProps {
   currentRoute: AppRoute;
@@ -20,6 +23,11 @@ interface NavbarProps {
   onSearchChange: (query: string) => void;
   onSearchSubmit: (query: string) => void;
   onRandomCard: () => void;
+  user?: UserProfile | null;
+  deckCount?: number;
+  favoritesCount?: number;
+  onOpenAuthModal?: () => void;
+  onLogout?: () => void;
   onOpenFilters?: () => void;
   activeFilterCount?: number;
   isLoading?: boolean;
@@ -32,8 +40,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onSearchSubmit,
   onRandomCard,
+  user,
+  deckCount = 0,
+  favoritesCount = 0,
+  onOpenAuthModal,
+  onLogout,
   isLoading = false,
 }) => {
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -229,6 +243,56 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Dices size={15} />
           </button>
+
+          {/* User Account / Login Action */}
+          {user ? (
+            <div className="profile-dropdown-container" style={{ marginLeft: '0.25rem' }}>
+              <button
+                type="button"
+                onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
+                className={`nav-action-btn ${isProfileDropdownOpen ? 'nav-action-btn-active' : ''}`}
+                style={{
+                  borderColor: 'rgba(212, 175, 55, 0.35)',
+                  background: isProfileDropdownOpen ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.08)',
+                  padding: '0.4rem 0.65rem',
+                }}
+                title="Abrir menú de usuario"
+              >
+                <UserIcon size={13} color="var(--accent-gold)" />
+                <span className="btn-label" style={{ color: 'var(--accent-gold)', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.displayName || 'Planeswalker'}
+                </span>
+              </button>
+
+              <ProfileDropdown
+                isOpen={isProfileDropdownOpen}
+                onClose={() => setIsProfileDropdownOpen(false)}
+                user={user}
+                deckCount={deckCount}
+                favoritesCount={favoritesCount}
+                onNavigate={(route) => {
+                  onRouteChange(route);
+                  setIsProfileDropdownOpen(false);
+                }}
+                onLogout={onLogout || (() => {})}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              className="nav-action-btn"
+              style={{
+                marginLeft: '0.25rem',
+                borderColor: 'rgba(212, 175, 55, 0.35)',
+                color: 'var(--accent-gold)',
+              }}
+              title="Iniciar sesión o registrarse para sincronizar mazos en la nube"
+            >
+              <UserIcon size={13} />
+              <span className="btn-label">Acceder</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

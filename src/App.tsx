@@ -8,7 +8,7 @@
  * 4. Sincronización de Historial: Soporte nativo para botones Atrás/Adelante y enlaces profundos (Deep Links).
  */
 
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -19,6 +19,7 @@ import { HotkeyHelpModal } from './components/HotkeyHelpModal';
 import { DeckPickerModal } from './components/DeckPickerModal';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ArcaneLoader } from './components/common/ArcaneLoader';
+import { AuthModal } from './components/auth/AuthModal';
 
 // Páginas Principales
 import { HomeFeed } from './pages/HomeFeed';
@@ -33,10 +34,12 @@ const BoosterOpener = React.lazy(() => import('./components/BoosterOpener'));
 
 // Utilidades y Tipos
 import { decodeSharedDeck } from './utils/sharing';
+import { saveCloudDeck, deleteCloudDeck, subscribeToCloudDecks } from './services/firebase/firestoreService';
 import type { Card } from './types/card';
 import type { AppRoute } from './types/navigation';
 
 // Custom Hooks Especializados
+import { useAuth } from './hooks/useAuth';
 import { useCardSearch } from './hooks/useCardSearch';
 import { useCardFilters } from './hooks/useCardFilters';
 import { useFavorites } from './hooks/useFavorites';
@@ -110,7 +113,7 @@ export const App: React.FC = () => {
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
   // Hook para gestión de mazos (crear, editar, eliminar, importar)
-  const { decks, setDecks, createDeck, deleteDeck, updateDeck, importDeck } = useDecks();
+  const { decks, setDecks, deleteDeck, updateDeck, importDeck } = useDecks();
 
   // Hook para parámetros del visor 3D (acabados de carta, volteo, partículas, cámara)
   const {
@@ -127,6 +130,25 @@ export const App: React.FC = () => {
     toggleParticles,
   } = useStudio3D();
 
+  // Hook de Autenticación con Firebase
+  const { user, logoutCurrentUser } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Sincronización automática en tiempo real con Cloud Firestore (Live Sync)
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      if (!user) setDecks([]);
+      return;
+    }
+
+    // Escucha reactiva en vivo: cualquier cambio en la nube se refleja de inmediato
+    const unsubscribe = subscribeToCloudDecks(user.uid, (cloudDecks) => {
+      setDecks(cloudDecks);
+    });
+
+    return () => unsubscribe();
+  }, [user, setDecks]);
+
   // Hook para orquestar la asignación de cartas a mazos desde cualquier pantalla
   const {
     pendingCards,
@@ -134,7 +156,17 @@ export const App: React.FC = () => {
     closeDeckPicker,
     confirmAddToDeck,
     createNewDeckWithPending,
-  } = useDeckPicker({ decks, updateDeck, setDecks, showToast });
+  } = useDeckPicker({
+    decks,
+    updateDeck: (updated) => {
+      updateDeck(updated);
+      if (user && !user.isAnonymous) {
+        saveCloudDeck(user.uid, updated).catch(console.warn);
+      }
+    },
+    setDecks,
+    showToast,
+  });
 
   // Estado local para el modal de ayuda de atajos
   const [isHotkeyModalOpen, setIsHotkeyModalOpen] = React.useState(false);
@@ -308,6 +340,11 @@ export const App: React.FC = () => {
               navigate(`/card/${card.id}`);
             }
           }}
+          user={user}
+          deckCount={decks.length}
+          favoritesCount={favorites.length}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onLogout={logoutCurrentUser}
           isLoading={isLoading}
         />
       )}
@@ -368,20 +405,46 @@ export const App: React.FC = () => {
                 element={
                   <DeckBuilderPage
                     decks={decks}
-                    onCreateDeck={createDeck}
-                    onDeleteDeck={deleteDeck}
+                    onCreateDeck={(name, format) => {
+                      const newDeck = {
+                        id: `deck-${Date.now()}`,
+                        name,
+                        format,
+                        description: '',
+                        cards: [],
+                        createdAt: Date.now(),
+                      };
+                      setDecks((prev) => [newDeck, ...prev]);
+                      if (user && !user.isAnonymous) {
+                        saveCloudDeck(user.uid, newDeck).catch(console.warn);
+                      }
+                    }}
+                    onDeleteDeck={(deckId) => {
+                      deleteDeck(deckId);
+                      if (user && !user.isAnonymous) {
+                        deleteCloudDeck(user.uid, deckId).catch(console.warn);
+                      }
+                    }}
                     onUpdateCardQuantity={(deckId, cardId, delta) => {
                       const d = decks.find((x) => x.id === deckId);
                       if (!d) return;
                       const cards = d.cards
                         .map((e) => (e.card.id === cardId ? { ...e, quantity: e.quantity + delta } : e))
                         .filter((e) => e.quantity > 0);
-                      updateDeck({ ...d, cards });
+                      const updated = { ...d, cards };
+                      updateDeck(updated);
+                      if (user && !user.isAnonymous) {
+                        saveCloudDeck(user.uid, updated).catch(console.warn);
+                      }
                     }}
                     onRemoveCardFromDeck={(deckId, cardId) => {
                       const d = decks.find((x) => x.id === deckId);
                       if (!d) return;
-                      updateDeck({ ...d, cards: d.cards.filter((e) => e.card.id !== cardId) });
+                      const updated = { ...d, cards: d.cards.filter((e) => e.card.id !== cardId) };
+                      updateDeck(updated);
+                      if (user && !user.isAnonymous) {
+                        saveCloudDeck(user.uid, updated).catch(console.warn);
+                      }
                     }}
                     onInspectCard={handleInspectIn3D}
                     onInspectDeck3D={(deckId) => navigate(`/deck-3d/${deckId}`)}
@@ -465,6 +528,13 @@ export const App: React.FC = () => {
           onClose={closeDeckPicker}
         />
       )}
+
+      {/* Modal de Autenticación Firebase (Login, Registro, Google, Invitado) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccessToast={(title, subtitle) => showToast(title, subtitle)}
+      />
     </div>
   );
 };

@@ -78,14 +78,17 @@
 ---
 
 ## 5. 🛠️ Constructor de Mazos y Colección de Favoritos
-* **Constructor de Mazos**:
+* **Constructor & Analizador de Mazos**:
+  * Gestión completa de múltiples barajas (Commander, Standard, Modern, etc.).
+  * **Botón de Compartir Enlace 3D Directo**: Copia en un clic el enlace Base64 autónomo para que cualquier usuario examine la baraja en 3D sin registrarse.
+  * Banner visual con la URL lista para copiar en el Workbench.
+  * Curva de maná analítica (CMC 0 a 7+) y desglose de tipos con píldoras de conteo.
   * Agregar cartas individuales o sobres completos mediante `DeckPickerModal`.
-  * Desglose visual por tipos (Criaturas, Conjuros, Tierras, etc.) y conteo de cartas.
-  * Compartir mazos mediante enlaces codificados en Base64 URL-safe.
+  * Exportación a formatos texto plano y MTG Arena.
 * **Visualizador 3D de Mazo (`Deck3DPage`)**:
   * Renderizado del mazo completo apilado en 3D con posibilidad de inspeccionar cartas.
 * **Colección de Favoritos**:
-  * Guardar cartas favoritas con persistencia desacoplada mediante `ICardStorageRepository`.
+  * Guardar cartas favoritas con persistencia reactiva en Cloud Firestore.
 
 ---
 
@@ -94,3 +97,16 @@
   * Protección contra errores en tiempo de ejecución en WebGL y componentes visuales, con panel de reintento.
 * **Deep Links**:
   * Soporte para enlaces directos a cartas (`?card=id`) y mazos compartidos (`?deck=data`).
+
+---
+
+## 7. ☁️ Autenticación y Sincronización en la Nube
+* **Cuentas de Usuario con Firebase**:
+  * Inicio de sesión y registro con Correo Electrónico y Contraseña propia.
+  * Soporte para inicio de sesión con Google y Modo Invitado.
+  * Recuperación de contraseña por correo electrónico.
+* **Sincronización en Tiempo Real con Cloud Firestore**:
+  * Respaldo automático de mazos en la nube bajo `users/{uid}/decks`.
+  * Sincronización transparente de favoritos entre dispositivos.
+* **Modal de Autenticación Mimetizado**:
+  * Diseño 100% integrado con la estética oscura, sobria y oro mate del Sanctum (sin colores neón ni emojis).

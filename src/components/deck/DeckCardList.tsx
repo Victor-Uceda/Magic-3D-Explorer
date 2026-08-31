@@ -48,32 +48,42 @@ export const DeckCardList: React.FC<DeckCardListProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {groupedCategories.map((group) => (
-        <div key={group.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div key={group.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+          {/* Category Header Badge */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-              paddingBottom: '0.35rem',
+              gap: '0.45rem',
+              padding: '0.2rem 0',
             }}
           >
             <span
               style={{
-                fontSize: '0.78rem',
+                fontSize: '0.74rem',
                 fontWeight: 800,
-                color: '#f1f5f9',
+                color: 'var(--text-primary)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.05em',
               }}
             >
               {group.label}
             </span>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-gold)' }}>
-              ({group.count})
+            <span
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                color: 'var(--accent-gold)',
+                background: 'rgba(197, 160, 89, 0.1)',
+                padding: '0.08rem 0.4rem',
+                borderRadius: '10px',
+              }}
+            >
+              {group.count}
             </span>
           </div>
 
+          {/* Cards List */}
           <div className="deck-cards-list-grid">
             {group.items.map((entry) => {
               const unitPricePen = formatPricePEN(entry.card.prices.usd);
@@ -84,7 +94,7 @@ export const DeckCardList: React.FC<DeckCardListProps> = ({
                     alt={entry.card.name}
                     className="deck-card-thumb"
                     onClick={() => onInspectCard(entry.card)}
-                    title="Examinar en 3D"
+                    title="Examinar carta en 3D"
                   />
 
                   <div className="deck-card-info" onClick={() => onInspectCard(entry.card)}>
@@ -109,7 +119,7 @@ export const DeckCardList: React.FC<DeckCardListProps> = ({
                         justifyContent: 'space-between',
                         width: '100%',
                         fontSize: '0.68rem',
-                        color: '#64748b',
+                        color: 'var(--text-muted)',
                       }}
                     >
                       <span>{unitPricePen}</span>
@@ -123,34 +133,46 @@ export const DeckCardList: React.FC<DeckCardListProps> = ({
                   </div>
 
                   {/* Quantity Stepper & Delete */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <button
                       type="button"
                       onClick={() => onUpdateQuantity(deckId, entry.card.id, -1)}
-                      className="deck-delete-btn"
+                      className="deck-btn-secondary"
+                      style={{ padding: '0.25rem 0.35rem' }}
                       title="Disminuir cantidad"
                     >
-                      <MinusCircle size={14} />
+                      <MinusCircle size={13} />
                     </button>
 
-                    <span className="deck-card-qty">{entry.quantity}</span>
+                    <span
+                      style={{
+                        minWidth: '22px',
+                        textAlign: 'center',
+                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      {entry.quantity}
+                    </span>
 
                     <button
                       type="button"
                       onClick={() => onUpdateQuantity(deckId, entry.card.id, 1)}
-                      className="deck-delete-btn"
+                      className="deck-btn-secondary"
+                      style={{ padding: '0.25rem 0.35rem' }}
                       title="Aumentar cantidad"
-                      style={{ color: '#cbd5e1' }}
                     >
-                      <PlusCircle size={14} />
+                      <PlusCircle size={13} />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => onRemoveCard(deckId, entry.card.id)}
-                      className="deck-delete-btn"
+                      className="deck-btn-secondary"
+                      style={{ padding: '0.25rem 0.35rem', color: '#f87171', marginLeft: '0.15rem' }}
                       title="Eliminar carta del mazo"
-                      style={{ marginLeft: '0.2rem' }}
                     >
                       <Trash2 size={13} />
                     </button>
