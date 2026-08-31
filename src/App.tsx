@@ -212,39 +212,13 @@ export const App: React.FC = () => {
   });
 
   // ==========================================
-  // 4. EFECTOS INICIALES Y DEEP LINKS
+  // 4. EFECTOS INICIALES
   // ==========================================
   
   // Carga inicial de cartas destacadas en Scryfall
   useEffect(() => {
     loadFeatured();
   }, [loadFeatured]);
-
-  // Resolución de enlaces compartidos (?deck=... o legado ?card=...)
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      
-      // 1. Enlace de mazo compartido codificado en Base64
-      const sharedDeckData = params.get('deck');
-      if (sharedDeckData) {
-        const decoded = decodeSharedDeck(sharedDeckData);
-        if (decoded && decoded.cards.length > 0) {
-          importDeck(decoded);
-          navigate('/deck-3d');
-          showToast(`¡Mazo "${decoded.name}" cargado en 3D!`, `${decoded.cards.length} cartas listas`);
-        }
-      }
-
-      // 2. Redirección de formato legado (?card=id) a ruta SPA limpia (/card/:id)
-      const sharedCardParam = params.get('card');
-      if (sharedCardParam) {
-        navigate(`/card/${sharedCardParam}`);
-      }
-    } catch (e) {
-      console.warn('Error al procesar parámetros de URL:', e);
-    }
-  }, [importDeck, navigate, showToast]);
 
   // ==========================================
   // 5. MANEJADORES DE NAVEGACIÓN Y ACCIONES
@@ -290,11 +264,15 @@ export const App: React.FC = () => {
   // Extrae el ID de la URL y descarga la carta si el usuario entra por un enlace directo
   const CardDetailRoute: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
+    const [searchParams] = useSearchParams();
+    const queryCardId = searchParams.get('card');
+    const targetCardId = id || queryCardId;
+
     useEffect(() => {
-      if (id && currentCard.id !== id) {
-        fetchCardById(id);
+      if (targetCardId && currentCard?.id !== targetCardId) {
+        fetchCardById(targetCardId);
       }
-    }, [id]);
+    }, [targetCardId]);
 
     return (
       <CardDetailPage
@@ -321,7 +299,7 @@ export const App: React.FC = () => {
         searchSummary={searchSummary}
         onAddToDeck={(c) => openDeckPicker([c])}
         onToggleFavorite={handleToggleFavoriteWithFeedback}
-        isFavorite={isFavorite(currentCard.id)}
+        isFavorite={currentCard ? isFavorite(currentCard.id) : false}
       />
     );
   };
