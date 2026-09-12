@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función auxiliar: Validar autenticación
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 1. Colección de Mazos: Lectura pública, control de tamaño para prevenir abuso
+    match /decks/{deckId} {
+      allow read: if true;
+      allow create: if request.resource.data.slots.size() <= 150; // Límite de 150 cartas
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // Compatibilidad: Rutas legadas bajo /users/{userId}/decks/{deckId}
+    match /users/{userId}/decks/{deckId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 2. Catálogo Canónico de Cartas (/cards/{cardId})
+    // Lectura pública, escritura permitida a usuarios autenticados y backend
+    match /cards/{cardId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // 3. Inventario Personal del Usuario: Aislamiento estricto por UID
+    match /users/{userId}/inventory/{cardId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 4. Auditoría de Apertura de Sobres: Inmutable (Audit Log)
+    // Exige exactamente 15 cartas reveladas por sobre Draft
+    match /booster_openings/{openingId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.resource.data.cardsRevealed.size() == 15;
+      allow update, delete: if false; // Jamás modificable ni eliminable
+    }
+
+    // 5. Favoritos del Usuario
+    match /users/{userId}/favorites/{docId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+  }
+}

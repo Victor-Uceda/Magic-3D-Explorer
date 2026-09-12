@@ -8,6 +8,8 @@ import { BoosterControls } from './booster/BoosterControls';
 import { BoosterSummaryModal } from './booster/BoosterSummaryModal';
 import { POPULAR_SETS, BOOSTER_ANIMATION } from '../constants/booster';
 import { handleApiError } from '../utils/errorHandler';
+import { useAuth } from '../hooks/useAuth';
+import { commitBoosterOpeningAtomic } from '../services/firebase/firestoreService';
 import type { Card } from '../types/card';
 
 
@@ -25,6 +27,7 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
   onAddToDeck,
   onAddAllToDeck,
 }) => {
+  const { user } = useAuth();
   const [availableSets, setAvailableSets] = useState<{ code: string; name: string }[]>([...POPULAR_SETS]);
   const [selectedSetCode, setSelectedSetCode] = useState<string>('mh3');
   const [selectedSetName, setSelectedSetName] = useState<string>('Modern Horizons 3');
@@ -86,6 +89,18 @@ export const BoosterOpener: React.FC<BoosterOpenerProps> = ({
     try {
       const generatedPack = await generateBoosterPack(selectedSetCode, selectedSetName);
       setPack(generatedPack);
+
+      // Persistencia atómica de apertura de sobre en inventario
+      if (user?.uid) {
+        commitBoosterOpeningAtomic(
+          user.uid,
+          selectedSetCode,
+          generatedPack.cards.map((c, idx) => ({ card: c.card, isFoil: idx === 14 })),
+          generatedPack.totalValuePen || 25
+        ).catch((err) => {
+          console.debug('[BoosterOpener] Persistencia de sobre omitida o offline:', err);
+        });
+      }
       
       setPhase('opening');
       setTimeout(() => {

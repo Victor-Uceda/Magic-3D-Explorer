@@ -5,7 +5,7 @@
  * vivían como magic numbers dentro de BoosterOpener.tsx.
  */
 
-/** Sets populares pre-cargados para selección rápida */
+/**Sets populares pre-cargados para selección rápida */
 export const POPULAR_SETS: ReadonlyArray<{ code: string; name: string }> = [
   { code: 'mh3', name: 'Modern Horizons 3' },
   { code: 'fdn', name: 'Foundations' },
