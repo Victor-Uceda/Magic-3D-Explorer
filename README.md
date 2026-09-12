@@ -45,4 +45,3 @@ La documentación completa para entender y recrear el proyecto se encuentra en l
 * **[`06-ai-agent.md`](./docs/06-ai-agent.md)**: Protocolo de desarrollo para asistentes y agentes IA.
 * **[`07-ui-ux-design-system.md`](./docs/07-ui-ux-design-system.md)**: Sistema completo de diseño UI/UX, tokens, glassmorphism y atajos.
 * **[`08-database-implementation-guide.md`](./docs/08-database-implementation-guide.md)**: Arquitectura implementada de base de datos en 3 niveles, código TypeScript, atomicidad ACID y Vercel Serverless ($0).
-* **[`09-interview-defense-guide.md`](./docs/09-interview-defense-guide.md)**: Guía de defensa para entrevista técnica: Pitch inicial, walkthrough paso a paso, pizarra y banco de preguntas trampa.
